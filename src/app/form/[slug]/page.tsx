@@ -378,12 +378,13 @@ export default function GuestFormPage() {
           </select>
         ) : (
           <input
-            type={fieldName.includes('Date') || fieldName.includes('In') || fieldName.includes('Out') ? 'date' : 
+            type={fieldName.includes('In') || fieldName.includes('Out') ? 'date' : 
                   fieldName === 'email' ? 'email' : 'text'}
             name={fieldName}
             value={typeof value === 'boolean' ? '' : value}
             onChange={handleInputChange}
             required={field.required}
+            placeholder={fieldName === 'dateOfBirth' ? 'TT.MM.JJJJ' : undefined}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         )}
@@ -477,7 +478,8 @@ export default function GuestFormPage() {
                             Geburtsdatum <span className="text-red-500">*</span>
                           </label>
                           <input
-                            type="date"
+                            type="text"
+                            placeholder="TT.MM.JJJJ"
                             value={traveller.dateOfBirth}
                             onChange={(e) => handleCoTravellerChange(index, 'dateOfBirth', e.target.value)}
                             required

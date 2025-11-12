@@ -25,7 +25,7 @@ export const hotelConfigSchema = z.object({
 export const guestSubmissionSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  dateOfBirth: z.string().optional(),
+  dateOfBirth: z.string().min(1),
   address: z.string().min(1),
   checkIn: z.string().min(1),
   checkOut: z.string().min(1),
@@ -35,7 +35,7 @@ export const guestSubmissionSchema = z.object({
     z.object({
       firstName: z.string().min(1),
       lastName: z.string().min(1),
-      dateOfBirth: z.string().optional(),
+      dateOfBirth: z.string().min(1),
     })
   ).optional(),
   signature: z.string().nullable().optional(),

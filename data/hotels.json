@@ -1,0 +1,25 @@
+[
+  {
+    "id": "hhhof",
+    "name": "Hotel Harburger Hof",
+    "email": "info@hhhof.de",
+    "address": "Schloßmühlendamm 16\n21073 Hamburg",
+    "phone": "+49(0)40 - 32 31 07 - 0",
+    "logoUrl": "/images/hhhof-logo.png",
+    "logoSelectable": true,
+    "themeColor": "#2563eb",
+    "legalText": "Mit der Übermittlung dieses Meldescheins stimmen Sie der Verarbeitung Ihrer personenbezogenen Daten gemäß der DSGVO zu. Ihre Daten werden ausschließlich für die gesetzlich vorgeschriebene Meldepflicht verwendet.",
+    "slug": "hotel-harburger-hof",
+    "fieldsConfig": {
+      "firstName": { "required": true, "visible": true },
+      "lastName": { "required": true, "visible": true },
+      "dateOfBirth": { "required": true, "visible": true },
+      "address": { "required": true, "visible": true },
+      "checkIn": { "required": true, "visible": true },
+      "checkOut": { "required": true, "visible": true },
+      "numberOfGuests": { "required": true, "visible": true },
+      "purpose": { "required": false, "visible": true }
+    },
+    "isActive": true
+  }
+]

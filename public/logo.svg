@@ -1,0 +1,8 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="#3b82f6" rx="20"/>
+  <rect x="20" y="20" width="160" height="160" fill="#ffffff" rx="10"/>
+  <text x="100" y="80" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#3b82f6">HHH</text>
+  <text x="100" y="110" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#6b7280">HOTEL</text>
+  <text x="100" y="130" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#6b7280">HARBURGER</text>
+  <text x="100" y="150" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#6b7280">HOF</text>
+</svg>

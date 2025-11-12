@@ -5,10 +5,18 @@ import { sendHotelEmail } from '@/lib/email-simple';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('📥 SUBMISSION REQUEST STARTED');
+    console.log('📥 Headers:', Object.fromEntries(request.headers.entries()));
+    
     const body = await request.json();
+    console.log('📥 Received data keys:', Object.keys(body));
+    console.log('📥 privacyAccepted:', body.privacyAccepted);
+    console.log('📥 coTravellers count:', body.coTravellers?.length || 0);
     
     // Validate submission data
+    console.log('🔍 Starting validation...');
     const validatedData = guestSubmissionSchema.parse(body);
+    console.log('✅ Validation successful');
     
     // Read existing submissions
     const submissions = await readSubmissions();
@@ -38,10 +46,16 @@ export async function POST(request: NextRequest) {
     
     // Send email directly here instead of external API call
     console.log('🔄 Starte E-Mail-Versendung...');
+    console.log('📧 Environment check:');
+    console.log('  SMTP_HOST:', process.env.SMTP_HOST ? '✅ Set' : '❌ Missing');
+    console.log('  SMTP_USER:', process.env.SMTP_USER ? '✅ Set' : '❌ Missing'); 
+    console.log('  SMTP_PASS:', process.env.SMTP_PASS ? '✅ Set' : '❌ Missing');
+    console.log('  HOTEL_EMAIL:', process.env.HOTEL_EMAIL ? '✅ Set' : '❌ Missing');
     
     try {
       const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
       const pdfUrl = `${baseUrl}/api/submissions/${newSubmission.id}/pdf`;
+      console.log('📄 PDF URL:', pdfUrl);
       
       const emailResult = await sendHotelEmail(newSubmission, pdfUrl);
       
@@ -67,15 +81,20 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error processing submission:', error);
+    console.error('❌ SUBMISSION ERROR DETAILS:', error);
+    console.error('❌ Error name:', error instanceof Error ? error.name : typeof error);
+    console.error('❌ Error message:', error instanceof Error ? error.message : JSON.stringify(error));
+    console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack available');
     
     if (error instanceof Error && 'issues' in error) {
       // Zod validation error
+      console.error('❌ Zod validation issues:', (error as any).issues);
       return NextResponse.json(
         {
           success: false,
-          error: 'Ungültige Formulardaten',
-          details: error,
+          error: 'Ungültige Formulardaten - Validation Error',
+          details: (error as any).issues,
+          errorType: 'validation'
         },
         { status: 400 }
       );
@@ -85,6 +104,9 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Fehler beim Verarbeiten des Meldescheins',
+        details: error instanceof Error ? error.message : 'Unbekannter Fehler',
+        errorType: 'server',
+        stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : null) : null
       },
       { status: 500 }
     );

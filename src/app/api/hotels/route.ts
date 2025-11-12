@@ -16,7 +16,7 @@ type HotelType = {
   themeColor?: string;
   legalText?: string;
   slug: string;
-  fieldsConfig?: Record<string, { required: boolean; visible: boolean }>;
+  fieldsConfig?: Record<string, { required?: boolean; visible?: boolean }>;
   isActive?: boolean;
 };
 

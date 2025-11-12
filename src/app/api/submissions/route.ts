@@ -18,10 +18,7 @@ export async function POST(request: NextRequest) {
     const validatedData = guestSubmissionSchema.parse(body);
     console.log('✅ Validation successful');
     
-    // Read existing submissions
-    const submissions = await readSubmissions();
-    
-    // Create new submission with ID and timestamp
+    // Create submission object (but don't save to file on Vercel)
     const newSubmission = {
       id: `submission_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       ...validatedData,
@@ -29,18 +26,22 @@ export async function POST(request: NextRequest) {
       status: 'pending',
     };
     
-    // Add to submissions
-    submissions.push(newSubmission);
+    // Try to save locally (will fail on Vercel, but that's OK)
+    try {
+      const submissions = await readSubmissions();
+      submissions.push(newSubmission);
+      await writeSubmissions(submissions);
+      console.log('✅ Local file saved successfully');
+    } catch (fileError) {
+      console.log('⚠️ File save skipped (read-only filesystem - normal on Vercel)');
+    }
     
-    // Write back to file
-    await writeSubmissions(submissions);
-    
-    console.log('New submission saved:', {
+    console.log('📝 Processing submission:', {
       id: newSubmission.id,
       guestName: `${validatedData.firstName} ${validatedData.lastName}`,
       checkIn: validatedData.checkIn,
       checkOut: validatedData.checkOut,
-      coTravellers: (validatedData as any).coTravellers?.length || 0,
+      coTravellers: validatedData.coTravellers?.length || 0,
       signature: validatedData.signature ? 'Present' : 'Missing',
     });
     
@@ -115,11 +116,19 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const submissions = await readSubmissions();
+    // Try to read submissions, but return empty array if file doesn't exist (Vercel)
+    let submissions = [];
+    try {
+      submissions = await readSubmissions();
+    } catch (fileError) {
+      console.log('⚠️ Submissions file not accessible (normal on Vercel)');
+      submissions = [];
+    }
 
     return NextResponse.json({
       success: true,
       data: submissions,
+      message: submissions.length === 0 ? 'No submissions stored (serverless environment)' : undefined
     });
   } catch (error) {
     console.error('Error fetching submissions:', error);

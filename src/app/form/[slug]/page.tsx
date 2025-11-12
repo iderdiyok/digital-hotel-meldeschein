@@ -39,7 +39,6 @@ export default function GuestFormPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [submittedId, setSubmittedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
@@ -247,8 +246,7 @@ export default function GuestFormPage() {
       const data = await response.json();
       
       if (data.success) {
-        // Speichere die Submission-ID für PDF-Link
-        setSubmittedId(data.data.submissionId);
+        // Submission erfolgreich
         setSubmitted(true);
       } else {
         setError(data.error || 'Fehler beim Übermitteln des Meldescheins');
@@ -309,17 +307,11 @@ export default function GuestFormPage() {
                 🏠 Zur Startseite
               </button>
               
-              {/* Optional: PDF anzeigen */}
-              {submittedId && (
-                <button
-                  onClick={() => window.open(`/api/submissions/${submittedId}/pdf`, '_blank')}
-                  className="w-full px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors text-sm"
-                >
-                  📄 PDF Meldeschein anzeigen
-                </button>
-              )}
+              <p className="text-xs text-gray-400 text-center">
+                Das PDF wurde per E-Mail an das Hotel gesendet
+              </p>
               
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-400 text-center">
                 Sie können dieses Fenster nun schließen
               </p>
             </div>

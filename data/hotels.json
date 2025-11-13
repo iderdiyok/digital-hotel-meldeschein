@@ -18,6 +18,7 @@
       "checkIn": { "required": true, "visible": true },
       "checkOut": { "required": true, "visible": true },
       "numberOfGuests": { "required": true, "visible": true },
+      "nationality": { "required": true, "visible": true },
       "purpose": { "required": false, "visible": true }
     },
     "isActive": true

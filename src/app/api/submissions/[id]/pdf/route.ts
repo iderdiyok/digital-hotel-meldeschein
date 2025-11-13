@@ -23,7 +23,14 @@ export async function GET(request: NextRequest, context: Props) {
       return NextResponse.json({ success: false, error: 'Meldeschein nicht gefunden' }, { status: 404 });
     }
 
-    console.log('🖨️ Generiere PDF für:', submission.firstName, submission.lastName);
+    // Helper function to translate purpose values
+    const translatePurpose = (purpose: string) => {
+        const purposeTranslations: { [key: string]: string } = {
+            'business': 'Geschäftsreisen',
+            'private': 'Privat'
+        };
+        return purposeTranslations[purpose] || purpose;
+    };
 
     // Generate HTML Content for PDF
     const htmlContent = `
@@ -128,7 +135,12 @@ export async function GET(request: NextRequest, context: Props) {
         }
         .compact-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 8px 12px;
+        }
+        .traveller-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
             gap: 8px 12px;
         }
         /* PDF Specific Styles */
@@ -178,6 +190,10 @@ export async function GET(request: NextRequest, context: Props) {
                 <div class="field-value">${submission.dateOfBirth || '-'}</div>
             </div>
             <div class="field">
+                <div class="field-label">Staatsangehörigkeit:</div>
+                <div class="field-value">${submission.nationality || '-'}</div>
+            </div>
+            <div class="field">
                 <div class="field-label">Adresse:</div>
                 <div class="field-value">${submission.address || '-'}</div>
             </div>
@@ -194,8 +210,8 @@ export async function GET(request: NextRequest, context: Props) {
                 <div class="field-value">${submission.numberOfGuests || '-'}</div>
             </div>
             <div class="field">
-                <div class="field-label">Zweck:</div>
-                <div class="field-value">${submission.purpose || '-'}</div>
+                <div class="field-label">Zweck des Aufenthalts:</div>
+                <div class="field-value">${translatePurpose(submission.purpose) || '-'}</div>
             </div>
         </div>
     </div>
@@ -206,7 +222,7 @@ export async function GET(request: NextRequest, context: Props) {
         ${submission.coTravellers.map((traveller: any, index: number) => `
                 <div class="traveller-card">
             <div class="traveller-title">Mitreisende/r #${index + 1}</div>
-            <div class="compact-grid">
+            <div class="traveller-grid">
                 <div class="field">
                     <div class="field-label">Vorname:</div>
                     <div class="field-value">${traveller.firstName || '-'}</div>
@@ -220,8 +236,8 @@ export async function GET(request: NextRequest, context: Props) {
                     <div class="field-value">${traveller.dateOfBirth || '-'}</div>
                 </div>
                 <div class="field">
-                    <div class="field-label">Adresse:</div>
-                    <div class="field-value">${traveller.address || '-'}</div>
+                    <div class="field-label">Staatsangehörigkeit:</div>
+                    <div class="field-value">${traveller.nationality || '-'}</div>
                 </div>
             </div>
         </div>
@@ -243,7 +259,6 @@ export async function GET(request: NextRequest, context: Props) {
 </html>`;
 
     // Generate PDF with Puppeteer
-    console.log('🚀 Starte Puppeteer für PDF-Generierung...');
     
     const browser = await puppeteer.launch({
       headless: true,
@@ -266,9 +281,7 @@ export async function GET(request: NextRequest, context: Props) {
       preferCSSPageSize: true
     });
     
-    await browser.close();
-    
-    console.log('✅ PDF erfolgreich generiert:', pdfBuffer.length, 'bytes');
+    await browser.close();    
 
     return new Response(Buffer.from(pdfBuffer), {
       headers: {

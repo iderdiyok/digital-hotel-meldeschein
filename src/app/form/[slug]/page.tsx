@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import { useLanguage } from '@/contexts/LanguageContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import DateInput from '@/components/DateInput';
+import { validateDateString } from '@/lib/dateFormatter';
 
 // Temporary interfaces
 interface Hotel {
@@ -16,12 +20,14 @@ interface Traveller {
   firstName: string;
   lastName: string;
   dateOfBirth: string;
+  nationality: string;
 }
 
 interface FormData {
   firstName: string;
   lastName: string;
   dateOfBirth: string;
+  nationality: string;
   address: string;
   checkIn: string;
   checkOut: string;
@@ -33,18 +39,22 @@ interface FormData {
 
 export default function GuestFormPage() {
   const params = useParams();
+  const router = useRouter();
   const slug = params.slug as string;
+  const { t } = useLanguage();
   
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
     dateOfBirth: '',
+    nationality: '',
     address: '',
     checkIn: '',
     checkOut: '',
@@ -55,6 +65,7 @@ export default function GuestFormPage() {
   });
   
   const [signature, setSignature] = useState<string | null>(null);
+  const [hotelEmail, setHotelEmail] = useState<string>('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -63,6 +74,19 @@ export default function GuestFormPage() {
       fetchHotelData();
     }
   }, [slug]);
+
+  // Canvas initialisieren
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+      }
+    }
+  }, []);
 
   const fetchHotelData = async () => {
     try {
@@ -93,32 +117,18 @@ export default function GuestFormPage() {
       newValue = (e.target as HTMLInputElement).checked;
     }
     
-    setFormData(prev => {
-      const updated = {
-        ...prev,
-        [name]: newValue
-      };
-      
-      // Wenn numberOfGuests geändert wird, passe coTravellers an
-      if (name === 'numberOfGuests') {
-        const numberOfGuests = parseInt(value);
-        const requiredCoTravellers = Math.max(0, numberOfGuests - 1); // -1 weil Hauptreisender nicht in coTravellers ist
-        
-        if (requiredCoTravellers > prev.coTravellers.length) {
-          // Füge neue leere Mitreisende hinzu
-          const newCoTravellers = [...prev.coTravellers];
-          for (let i = prev.coTravellers.length; i < requiredCoTravellers; i++) {
-            newCoTravellers.push({ firstName: '', lastName: '', dateOfBirth: '' });
-          }
-          updated.coTravellers = newCoTravellers;
-        } else if (requiredCoTravellers < prev.coTravellers.length) {
-          // Entferne überschüssige Mitreisende
-          updated.coTravellers = prev.coTravellers.slice(0, requiredCoTravellers);
-        }
-      }
-      
-      return updated;
-    });
+    setFormData(prev => ({
+      ...prev,
+      [name]: newValue
+    }));
+  };
+
+  // Spezielle Funktion für Datumsfelder
+  const handleDateChange = (fieldName: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
   };
 
   // Co-travellers functions
@@ -128,6 +138,31 @@ export default function GuestFormPage() {
       coTravellers: prev.coTravellers.map((traveller, i) => 
         i === index ? { ...traveller, [field]: value } : traveller
       )
+    }));
+  };
+
+  // Spezielle Funktion für Mitreisende-Datumfelder
+  const handleCoTravellerDateChange = (index: number, value: string) => {
+    handleCoTravellerChange(index, 'dateOfBirth', value);
+  };
+
+  // Funktionen für Gäste-Management
+  const addCoTraveller = () => {
+    // Maximale Anzahl von Gästen begrenzen (z.B. 10)
+    if (formData.coTravellers.length < 9) { // 9 Mitreisende + 1 Hauptgast = 10 Gäste max
+      setFormData(prev => ({
+        ...prev,
+        numberOfGuests: prev.numberOfGuests + 1,
+        coTravellers: [...prev.coTravellers, { firstName: '', lastName: '', dateOfBirth: '', nationality: '' }]
+      }));
+    }
+  };
+
+  const removeCoTraveller = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      numberOfGuests: Math.max(1, prev.numberOfGuests - 1),
+      coTravellers: prev.coTravellers.filter((_, i) => i !== index)
     }));
   };
 
@@ -200,30 +235,94 @@ export default function GuestFormPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!signature) {
-      setError('Bitte fügen Sie Ihre digitale Unterschrift hinzu');
+    // Lösche alle vorherigen Fehler
+    setError(null);
+    setFieldErrors({});
+    
+    const newFieldErrors: Record<string, string> = {};
+    
+    // Prüfe ob Canvas existiert und ob etwas gezeichnet wurde
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      setError(t.validation.signatureRequired);
+      return;
+    }
+
+    // Prüfe ob das Canvas tatsächlich Inhalt hat (nicht nur leer ist)
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      setError(t.validation.signatureRequired);
+      return;
+    }
+
+    // Hole Canvas-Daten und prüfe ob es wirklich gezeichnet wurde
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const hasDrawing = imageData.data.some((pixel, index) => {
+      // Prüfe Alpha-Kanal (jeder 4. Wert) - wenn > 0, dann wurde etwas gezeichnet
+      return index % 4 === 3 && pixel > 0;
+    });
+
+    console.log('Signature validation:', { hasDrawing, signature: !!signature });
+
+    if (!hasDrawing || !signature) {
+      setError(t.validation.signatureRequired);
       return;
     }
     
-    // Validiere, dass alle Mitreisende ausgefüllt sind
-    const incompleteTravellers = formData.coTravellers.some(
-      traveller => !traveller.firstName || !traveller.lastName || !traveller.dateOfBirth
-    );
-    
-    if (incompleteTravellers) {
-      setError('Bitte füllen Sie alle Angaben für alle Mitreisende aus');
-      return;
+    // Validiere Hauptgast-Pflichtfelder
+    if (!formData.firstName) {
+      newFieldErrors.firstName = t.validation.fieldErrors.firstName;
+    }
+    if (!formData.lastName) {
+      newFieldErrors.lastName = t.validation.fieldErrors.lastName;
+    }
+    if (!formData.nationality) {
+      newFieldErrors.nationality = t.validation.fieldErrors.nationality;
+    }
+    if (!formData.address) {
+      newFieldErrors.address = t.validation.fieldErrors.address;
+    }
+    if (!formData.checkIn) {
+      newFieldErrors.checkIn = t.validation.fieldErrors.checkIn;
+    }
+    if (!formData.checkOut) {
+      newFieldErrors.checkOut = t.validation.fieldErrors.checkOut;
     }
     
-    // Validiere Hauptreisende-Pflichtfelder
-    if (!formData.firstName || !formData.lastName || !formData.dateOfBirth || !formData.address || !formData.checkIn || !formData.checkOut) {
-      setError('Bitte füllen Sie alle Pflichtfelder aus');
+    // Validiere Geburtsdatum
+    if (!formData.dateOfBirth) {
+      newFieldErrors.dateOfBirth = t.validation.fieldErrors.dateOfBirth;
+    } else if (!validateDateString(formData.dateOfBirth)) {
+      newFieldErrors.dateOfBirth = t.validation.fieldErrors.dateOfBirth;
+    }
+    
+    // Validiere Mitreisende
+    formData.coTravellers.forEach((traveller, index) => {
+      if (!traveller.firstName) {
+        newFieldErrors[`coTraveller_${index}_firstName`] = t.validation.fieldErrors.firstName;
+      }
+      if (!traveller.lastName) {
+        newFieldErrors[`coTraveller_${index}_lastName`] = t.validation.fieldErrors.lastName;
+      }
+      if (!traveller.nationality) {
+        newFieldErrors[`coTraveller_${index}_nationality`] = t.validation.fieldErrors.nationality;
+      }
+      if (!traveller.dateOfBirth) {
+        newFieldErrors[`coTraveller_${index}_dateOfBirth`] = t.validation.fieldErrors.dateOfBirth;
+      } else if (!validateDateString(traveller.dateOfBirth)) {
+        newFieldErrors[`coTraveller_${index}_dateOfBirth`] = t.validation.fieldErrors.dateOfBirth;
+      }
+    });
+    
+    // Wenn es Feldfehlerfehler gibt, zeige sie an
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
       return;
     }
     
     // Validiere Datenschutz-Zustimmung
     if (!formData.privacyAccepted) {
-      setError('Bitte akzeptieren Sie die Datenschutzerklärung');
+      setError(t.validation.privacyRequired);
       return;
     }
     
@@ -247,6 +346,9 @@ export default function GuestFormPage() {
       
       if (data.success) {
         // Submission erfolgreich
+        if (data.data?.hotelEmail) {
+          setHotelEmail(data.data.hotelEmail);
+        }
         setSubmitted(true);
       } else {
         setError(data.error || 'Fehler beim Übermitteln des Meldescheins');
@@ -288,14 +390,14 @@ export default function GuestFormPage() {
           <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="text-green-500 text-5xl mb-4">✅</div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Vielen Dank!
+              {t.success.title}
             </h1>
             <p className="text-gray-600 mb-4">
-              Ihr digitaler Meldeschein wurde erfolgreich übermittelt und per E-Mail an das Hotel gesendet.
+              {t.success.message}
             </p>
             <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded mb-6">
-              <p className="mb-1">📧 E-Mail gesendet an:</p>
-              <p className="font-mono text-xs">Osman.sabani@gmx.de</p>
+              <p className="mb-1">📧 {t.success.emailSentTo}</p>
+              <p className="font-mono text-xs">{hotelEmail || 'Hotel E-Mail'}</p>
             </div>
             
             {/* Schließen Button */}
@@ -304,15 +406,15 @@ export default function GuestFormPage() {
                 onClick={() => window.location.href = '/'}
                 className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
-                🏠 Zur Startseite
+                {t.success.backToHome}
               </button>
               
               <p className="text-xs text-gray-400 text-center">
-                Das PDF wurde per E-Mail an das Hotel gesendet
+                {t.success.pdfSentInfo}
               </p>
               
               <p className="text-xs text-gray-400 text-center">
-                Sie können dieses Fenster nun schließen
+                {t.success.closeWindow}
               </p>
             </div>
           </div>
@@ -322,21 +424,23 @@ export default function GuestFormPage() {
   }
 
   const renderField = (fieldName: string, field: { required: boolean; visible: boolean }) => {
-    if (!field.visible || fieldName === 'coTravellers') return null;
+    if (!field.visible || fieldName === 'coTravellers' || fieldName === 'numberOfGuests') return null;
 
     const fieldLabels: Record<string, string> = {
-      firstName: 'Vorname',
-      lastName: 'Nachname',
-      dateOfBirth: 'Geburtsdatum',
-      address: 'Adresse',
-      checkIn: 'Check-in',
-      checkOut: 'Check-out',
-      numberOfGuests: 'Anzahl Gäste',
-      purpose: 'Zweck des Aufenthalts',
+      firstName: t.fields.firstName,
+      lastName: t.fields.lastName,
+      dateOfBirth: t.fields.dateOfBirth,
+      nationality: t.fields.nationality,
+      address: t.fields.address,
+      checkIn: t.fields.arrivalDate,
+      checkOut: t.fields.departureDate,
+      numberOfGuests: t.fields.numberOfGuests,
+      purpose: t.fields.purpose,
     };
 
     const label = fieldLabels[fieldName] || fieldName;
     const value = formData[fieldName as keyof Omit<FormData, 'coTravellers'>];
+    const hasError = fieldErrors[fieldName];
     
     return (
       <div key={fieldName} className="mb-4">
@@ -344,30 +448,49 @@ export default function GuestFormPage() {
           {label}
           {field.required && <span className="text-red-500 ml-1">*</span>}
         </label>
-        {fieldName === 'numberOfGuests' ? (
-          <input
-            type="number"
-            name={fieldName}
-            value={typeof value === 'boolean' ? '' : value}
-            onChange={handleInputChange}
-            required={field.required}
-            min="1"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        ) : fieldName === 'purpose' ? (
+        {fieldName === 'purpose' ? (
           <select
             name={fieldName}
             value={typeof value === 'boolean' ? '' : value}
             onChange={handleInputChange}
             required={field.required}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+              hasError 
+                ? 'border-red-500 focus:ring-red-500' 
+                : 'border-gray-300 focus:ring-blue-500'
+            }`}
           >
-            <option value="">Bitte wählen</option>
-            <option value="business">Geschäftlich</option>
-            <option value="leisure">Urlaub</option>
-            <option value="family">Familienbesuch</option>
-            <option value="other">Sonstiges</option>
+            <option value="">{t.fields.pleaseSelect}</option>
+            <option value="private">{t.fields.private}</option>
+            <option value="business">{t.fields.business}</option>
           </select>
+        ) : fieldName === 'dateOfBirth' ? (
+          <DateInput
+            name={fieldName}
+            value={typeof value === 'boolean' ? '' : String(value)}
+            onChange={(newValue) => handleDateChange(fieldName, newValue)}
+            placeholder={t.placeholders.dateOfBirth}
+            required={field.required}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+              hasError 
+                ? 'border-red-500 focus:ring-red-500' 
+                : 'border-gray-300 focus:ring-blue-500'
+            }`}
+          />
+        ) : fieldName === 'nationality' ? (
+          <input
+            type="text"
+            name={fieldName}
+            value={typeof value === 'boolean' ? '' : String(value)}
+            onChange={handleInputChange}
+            placeholder={t.placeholders.nationality}
+            required={field.required}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+              hasError 
+                ? 'border-red-500 focus:ring-red-500' 
+                : 'border-gray-300 focus:ring-blue-500'
+            }`}
+          />
         ) : (
           <input
             type={fieldName.includes('In') || fieldName.includes('Out') ? 'date' : 
@@ -376,9 +499,20 @@ export default function GuestFormPage() {
             value={typeof value === 'boolean' ? '' : value}
             onChange={handleInputChange}
             required={field.required}
-            placeholder={fieldName === 'dateOfBirth' ? 'TT.MM.JJJJ' : undefined}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+              hasError 
+                ? 'border-red-500 focus:ring-red-500' 
+                : 'border-gray-300 focus:ring-blue-500'
+            }`}
           />
+        )}
+        
+        {/* Feldspezifische Fehlermeldung */}
+        {hasError && (
+          <div className="mt-1 text-sm text-red-600 flex items-center">
+            <span className="mr-1">⚠️</span>
+            {hasError}
+          </div>
         )}
       </div>
     );
@@ -386,20 +520,39 @@ export default function GuestFormPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Back Button */}
+        <div className="mb-6">
+          <button
+            onClick={() => router.push('/')}
+            className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-white rounded-md transition-colors shadow-sm"
+            type="button"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="text-sm font-medium">{t.form.backToHome}</span>
+          </button>
+        </div>
+        
         <div className="bg-white rounded-lg shadow-lg">
           {/* Header */}
           <div className="px-6 py-4 border-b border-gray-200" style={{ backgroundColor: hotel.themeColor + '10' }}>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {hotel.name}
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Digitaler Meldeschein
-            </p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {hotel.name}
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  {t.form.title}
+                </p>
+              </div>
+              <LanguageSwitcher />
+            </div>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="px-6 py-6">
+          <form onSubmit={handleSubmit} className="px-6 pb-6 pt-6">
             {error && (
               <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
                 {error}
@@ -421,62 +574,142 @@ export default function GuestFormPage() {
             {/* Mitreisende Section */}
             <div className="mb-8">
               <div className="mb-4 pb-2 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  👥 Mitreisende
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  Basierend auf der Anzahl Gäste ({formData.numberOfGuests}) werden {Math.max(0, formData.numberOfGuests - 1)} Mitreisende angezeigt
-                </p>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      👥 {t.form.coTravellers}
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {t.guests.totalGuests}: {t.guests.mainGuestPlus}{formData.coTravellers.length}{t.guests.coTravellers}
+                    </p>
+                    {formData.coTravellers.length >= 9 && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        {t.guests.maxGuestsReached}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addCoTraveller}
+                    disabled={formData.coTravellers.length >= 9}
+                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+                  >
+                    <span className="text-lg">+</span>
+                    <span>{t.guests.addCoTraveller}</span>
+                  </button>
+                </div>
               </div>
               
               {formData.coTravellers.length === 0 ? (
                 <p className="text-gray-500 italic text-center py-4">
-                  Keine Mitreisende (nur Hauptreisende/r)
+                  {t.guests.noCoTravellers}
                 </p>
               ) : (
                 <div className="space-y-4">
                   {formData.coTravellers.map((traveller, index) => (
                     <div key={index} className="p-4 border border-gray-200 rounded-md bg-gray-50">
-                      <h4 className="font-medium text-gray-700 mb-3">
-                        Mitreisende/r #{index + 1}
-                      </h4>
+                      <div className="flex justify-between items-center mb-3">
+                        <h4 className="font-medium text-gray-700">
+                          Mitreisende/r #{index + 1}
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={() => removeCoTraveller(index)}
+                          className="flex items-center space-x-1 px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                        >
+                          <span className="text-sm">×</span>
+                          <span className="text-sm">{t.guests.removeCoTraveller}</span>
+                        </button>
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Vorname <span className="text-red-500">*</span>
+                            {t.fields.firstName} <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
                             value={traveller.firstName}
                             onChange={(e) => handleCoTravellerChange(index, 'firstName', e.target.value)}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                              fieldErrors[`coTraveller_${index}_firstName`] 
+                                ? 'border-red-500 focus:ring-red-500' 
+                                : 'border-gray-300 focus:ring-blue-500'
+                            }`}
                           />
+                          {fieldErrors[`coTraveller_${index}_firstName`] && (
+                            <div className="mt-1 text-sm text-red-600 flex items-center">
+                              <span className="mr-1">⚠️</span>
+                              {fieldErrors[`coTraveller_${index}_firstName`]}
+                            </div>
+                          )}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Nachname <span className="text-red-500">*</span>
+                            {t.fields.lastName} <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
                             value={traveller.lastName}
                             onChange={(e) => handleCoTravellerChange(index, 'lastName', e.target.value)}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                              fieldErrors[`coTraveller_${index}_lastName`] 
+                                ? 'border-red-500 focus:ring-red-500' 
+                                : 'border-gray-300 focus:ring-blue-500'
+                            }`}
                           />
+                          {fieldErrors[`coTraveller_${index}_lastName`] && (
+                            <div className="mt-1 text-sm text-red-600 flex items-center">
+                              <span className="mr-1">⚠️</span>
+                              {fieldErrors[`coTraveller_${index}_lastName`]}
+                            </div>
+                          )}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Geburtsdatum <span className="text-red-500">*</span>
+                            {t.fields.dateOfBirth} <span className="text-red-500">*</span>
+                          </label>
+                          <DateInput
+                            value={traveller.dateOfBirth}
+                            onChange={(newValue) => handleCoTravellerDateChange(index, newValue)}
+                            placeholder={t.placeholders.dateOfBirth}
+                            required
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                              fieldErrors[`coTraveller_${index}_dateOfBirth`] 
+                                ? 'border-red-500 focus:ring-red-500' 
+                                : 'border-gray-300 focus:ring-blue-500'
+                            }`}
+                          />
+                          {fieldErrors[`coTraveller_${index}_dateOfBirth`] && (
+                            <div className="mt-1 text-sm text-red-600 flex items-center">
+                              <span className="mr-1">⚠️</span>
+                              {fieldErrors[`coTraveller_${index}_dateOfBirth`]}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {t.fields.nationality} <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
-                            placeholder="TT.MM.JJJJ"
-                            value={traveller.dateOfBirth}
-                            onChange={(e) => handleCoTravellerChange(index, 'dateOfBirth', e.target.value)}
+                            placeholder={t.placeholders.nationality}
+                            value={traveller.nationality}
+                            onChange={(e) => handleCoTravellerChange(index, 'nationality', e.target.value)}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                              fieldErrors[`coTraveller_${index}_nationality`] 
+                                ? 'border-red-500 focus:ring-red-500' 
+                                : 'border-gray-300 focus:ring-blue-500'
+                            }`}
                           />
+                          {fieldErrors[`coTraveller_${index}_nationality`] && (
+                            <div className="mt-1 text-sm text-red-600 flex items-center">
+                              <span className="mr-1">⚠️</span>
+                              {fieldErrors[`coTraveller_${index}_nationality`]}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -488,9 +721,9 @@ export default function GuestFormPage() {
             {/* Signature Section */}
             <div className="mt-8 pt-6 border-t border-gray-200">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Digitale Unterschrift <span className="text-red-500">*</span>
+                {t.signature.title} <span className="text-red-500">*</span>
               </h3>
-              <div className="border-2 border-gray-300 rounded-md p-4">
+              <div className={`border-2 rounded-md p-4 ${!signature && error ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}>
                 <canvas
                   ref={canvasRef}
                   width={400}
@@ -507,16 +740,22 @@ export default function GuestFormPage() {
                 />
                 <div className="mt-2 flex justify-between items-center">
                   <p className="text-sm text-gray-500">
-                    Bitte unterschreiben Sie in dem Feld oben
+                    {t.signature.description}
                   </p>
                   <button
                     type="button"
                     onClick={clearSignature}
                     className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
                   >
-                    Löschen
+                    {t.signature.clearButton}
                   </button>
                 </div>
+                {!signature && error && (
+                  <div className="mt-2 text-sm text-red-600 flex items-center">
+                    <span className="mr-1">⚠️</span>
+                    {t.validation.signatureRequired}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -533,29 +772,39 @@ export default function GuestFormPage() {
                   className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label htmlFor="privacyAccepted" className="text-sm text-gray-700">
-                  <span className="text-red-500">*</span> Ich habe die{' '}
+                  <span className="text-red-500">*</span> {t.privacy.text}{' '}
                   <a 
                     href="https://www.hhhof.de/privacy" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 underline font-medium"
                   >
-                    Datenschutzerklärung
+                    {t.privacy.linkText}
                   </a>{' '}
-                  gelesen und akzeptiere diese. Ich bin damit einverstanden, dass meine Daten zur Erfüllung der gesetzlichen Meldepflicht verarbeitet werden.
+                  {t.privacy.textContinue}
                 </label>
               </div>
             </div>
 
             {/* Submit Button */}
             <div className="mt-8">
+              {/* Fehlermeldung direkt vor Submit Button */}
+              {error && (
+                <div className="mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded">
+                  <div className="flex items-center">
+                    <span className="text-lg mr-2">⚠️</span>
+                    <span className="font-medium">{error}</span>
+                  </div>
+                </div>
+              )}
+              
               <button
                 type="submit"
                 disabled={submitting}
                 className="w-full px-4 py-3 bg-blue-600 text-white text-lg font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: hotel.themeColor }}
               >
-                {submitting ? 'Wird übermittelt...' : 'Meldeschein übermitteln'}
+                {submitting ? t.form.submitting : t.form.submit}
               </button>
             </div>
           </form>

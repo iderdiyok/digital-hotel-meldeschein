@@ -2,9 +2,7 @@ import nodemailer from 'nodemailer';
 
 // SMTP Verbindung testen
 export async function testSMTPConnection() {
-  try {
-    console.log('🔗 Teste SMTP Verbindung...');
-    
+  try {    
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'mail.hotel-harburger-hof.de',
       port: parseInt(process.env.SMTP_PORT || '587'),
@@ -21,7 +19,6 @@ export async function testSMTPConnection() {
     // Verbindung testen
     await transporter.verify();
     
-    console.log('✅ SMTP Verbindung erfolgreich!');
     return { success: true, message: 'SMTP Server ist erreichbar' };
     
   } catch (error) {
@@ -37,9 +34,6 @@ export async function testSMTPConnection() {
 
 export async function sendHotelEmail(submission: any, pdfUrl: string) {
   try {
-    console.log('📧 === E-MAIL VERSENDUNG GESTARTET ===');
-    console.log('📧 Empfänger: Osman.sabani@gmx.de');
-    console.log('📧 Gast:', submission.firstName, submission.lastName);
     
     // Kurze, professionelle E-Mail Nachricht
     const emailSubject = `Neuer Meldeschein - ${submission.firstName} ${submission.lastName}`;
@@ -58,12 +52,8 @@ Mit freundlichen Grüßen,
 Digitales Meldeschein-System
 Hotel Harburger Hof`;
 
-    console.log('📧 === E-MAIL INHALT (KURZ) ===');
-    console.log('Subject:', emailSubject);
-    console.log('Text:', emailText);
     
     // PDF von URL laden für Anhang
-    console.log('📄 Lade PDF für Anhang...');
     let pdfBuffer: Buffer | null = null;
     
     try {
@@ -72,12 +62,12 @@ Hotel Harburger Hof`;
       if (pdfResponse.ok) {
         const arrayBuffer = await pdfResponse.arrayBuffer();
         pdfBuffer = Buffer.from(arrayBuffer);
-        console.log('✅ PDF erfolgreich geladen:', pdfBuffer.length, 'bytes');
+  
       } else {
-        console.log('⚠️ PDF konnte nicht geladen werden, sende nur Link');
+  
       }
     } catch (pdfError) {
-      console.log('⚠️ PDF Download Fehler:', pdfError);
+
     }
     
     // SMTP Transporter erstellen (Hotel SMTP Server)
@@ -97,7 +87,7 @@ Hotel Harburger Hof`;
     // E-Mail Optionen mit PDF Anhang
     const mailOptions: any = {
       from: `"Hotel Harburger Hof" <${process.env.SMTP_USER || 'meldeschein@hotel-harburger-hof.de'}>`,
-      to: 'Osman.sabani@gmx.de',
+      to: process.env.HOTEL_EMAIL,
       cc: process.env.HOTEL_EMAIL || 'info@hhhof.de',
       subject: emailSubject,
       text: emailText,
@@ -142,20 +132,16 @@ Hotel Harburger Hof`;
           contentType: 'application/pdf'
         }
       ];
-      console.log('📎 PDF als Anhang hinzugefügt');
+
     }
 
     const result = await transporter.sendMail(mailOptions);
-    
-    console.log('✅ E-MAIL WIRKLICH VERSENDET!');
-    console.log('📧 Message ID:', result.messageId);
-    console.log('📎 PDF Anhang:', pdfBuffer ? 'Ja' : 'Nur Link');
-    console.log('📧 === E-MAIL VERSENDUNG ABGESCHLOSSEN ===');
+    console.log("✅ E-MAIL ERFOLGREICH GESENDET:", result);
     
     return {
       success: true,
       message: "E-Mail mit PDF-Anhang erfolgreich versendet",
-      recipient: "Osman.sabani@gmx.de",
+      recipient: mailOptions.to,
       messageId: result.messageId,
       pdfAttached: !!pdfBuffer
     };

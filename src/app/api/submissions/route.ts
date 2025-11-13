@@ -5,19 +5,12 @@ import { sendHotelEmail } from '@/lib/email-simple';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('📥 SUBMISSION REQUEST STARTED');
-    console.log('📥 Headers:', Object.fromEntries(request.headers.entries()));
-    
+            
     const body = await request.json();
-    console.log('📥 Received data keys:', Object.keys(body));
-    console.log('📥 privacyAccepted:', body.privacyAccepted);
-    console.log('📥 coTravellers count:', body.coTravellers?.length || 0);
-    
+                
     // Validate submission data
-    console.log('🔍 Starting validation...');
-    const validatedData = guestSubmissionSchema.parse(body);
-    console.log('✅ Validation successful');
-    
+        const validatedData = guestSubmissionSchema.parse(body);
+        
     // Create submission object (but don't save to file on Vercel)
     const newSubmission = {
       id: `submission_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -31,44 +24,27 @@ export async function POST(request: NextRequest) {
       const submissions = await readSubmissions();
       submissions.push(newSubmission);
       await writeSubmissions(submissions);
-      console.log('✅ Local file saved successfully');
-    } catch (fileError) {
-      console.log('⚠️ File save skipped (read-only filesystem - normal on Vercel)');
-    }
+          } catch (fileError) {
+          }
     
-    console.log('📝 Processing submission:', {
-      id: newSubmission.id,
-      guestName: `${validatedData.firstName} ${validatedData.lastName}`,
-      checkIn: validatedData.checkIn,
-      checkOut: validatedData.checkOut,
-      coTravellers: validatedData.coTravellers?.length || 0,
-      signature: validatedData.signature ? 'Present' : 'Missing',
-    });
+    
     
     // Send email directly here instead of external API call
-    console.log('🔄 Starte E-Mail-Versendung...');
-    console.log('📧 Environment check:');
-    console.log('  SMTP_HOST:', process.env.SMTP_HOST ? '✅ Set' : '❌ Missing');
-    console.log('  SMTP_USER:', process.env.SMTP_USER ? '✅ Set' : '❌ Missing'); 
-    console.log('  SMTP_PASS:', process.env.SMTP_PASS ? '✅ Set' : '❌ Missing');
-    console.log('  HOTEL_EMAIL:', process.env.HOTEL_EMAIL ? '✅ Set' : '❌ Missing');
-    
+                
+            
     try {
       const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
       const pdfUrl = `${baseUrl}/api/submissions/${newSubmission.id}/pdf`;
-      console.log('📄 PDF URL:', pdfUrl);
-      
+            
       const emailResult = await sendHotelEmail(newSubmission, pdfUrl);
       
       if (emailResult.success) {
-        console.log('✅ E-Mail erfolgreich versendet!');
-        console.log('📧 Empfänger: hotelharburgerhof@gmail.com');
-        console.log('📄 PDF URL:', pdfUrl);
+        console.log('✅ E-Mail erfolgreich versendet!');                        
       } else {
         console.error('❌ E-Mail-Versand fehlgeschlagen:', emailResult.error);
       }
     } catch (emailError) {
-      console.error('🚨 Fehler bei E-Mail-Versendung:', emailError);
+      console.error('❌ E-Mail-Versand fehlgeschlagen:', emailError);
     }
     
     return NextResponse.json({
@@ -78,18 +54,19 @@ export async function POST(request: NextRequest) {
         submissionId: newSubmission.id,
         pdfPreviewUrl: `/api/submissions/${newSubmission.id}/pdf`,
         emailSent: true,
+        hotelEmail: process.env.HOTEL_EMAIL,
         timestamp: new Date(),
       },
     });
   } catch (error) {
-    console.error('❌ SUBMISSION ERROR DETAILS:', error);
-    console.error('❌ Error name:', error instanceof Error ? error.name : typeof error);
-    console.error('❌ Error message:', error instanceof Error ? error.message : JSON.stringify(error));
-    console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack available');
+    
+    
+    
+    
     
     if (error instanceof Error && 'issues' in error) {
       // Zod validation error
-      console.error('❌ Zod validation issues:', (error as any).issues);
+      
       return NextResponse.json(
         {
           success: false,
@@ -121,8 +98,7 @@ export async function GET() {
     try {
       submissions = await readSubmissions();
     } catch (fileError) {
-      console.log('⚠️ Submissions file not accessible (normal on Vercel)');
-      submissions = [];
+            submissions = [];
     }
 
     return NextResponse.json({
@@ -131,7 +107,7 @@ export async function GET() {
       message: submissions.length === 0 ? 'No submissions stored (serverless environment)' : undefined
     });
   } catch (error) {
-    console.error('Error fetching submissions:', error);
+    
     return NextResponse.json(
       {
         success: false,

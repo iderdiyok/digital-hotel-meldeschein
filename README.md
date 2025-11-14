@@ -2,6 +2,40 @@
 
 Eine moderne, DSGVO-konforme Lösung für digitale Meldescheine in Hotels. Ermöglicht es Hotels, Gäste-Registrierungen vollständig digital zu verwalten mit automatischer PDF-Generierung und E-Mail-Versand.
 
+## 🔐 Sicherheit / Passwort-Schutz
+
+Die Anwendung verfügt über **HTTP Basic Authentication** für alle `/form/*` Pfade (Meldeschein-Formulare).
+
+### Einrichtung der Authentifizierung
+
+**Lokale Entwicklung:**
+
+```bash
+export BASIC_AUTH_USER=hotel
+export BASIC_AUTH_PASS=GeheimesPasswort123
+npm run dev
+```
+
+**Vercel Production:**
+
+1. Gehe zu deinem Vercel-Projekt → **Settings** → **Environment Variables**
+2. Füge hinzu:
+   - `BASIC_AUTH_USER` = `hotel` (oder dein gewünschter Benutzername)
+   - `BASIC_AUTH_PASS` = `GeheimesPasswort123` (oder dein gewünschtes Passwort)
+3. Deploy die Anwendung
+
+**Test der Authentifizierung:**
+
+```bash
+# Mit korrekten Credentials
+curl --user hotel:GeheimesPasswort123 https://deine-domain.vercel.app/form/hotel-name
+
+# Ohne Credentials (sollte 401 zurückgeben)
+curl https://deine-domain.vercel.app/form/hotel-name
+```
+
+> **Hinweis:** Die Hauptseite `/` bleibt öffentlich zugänglich. Nur die Meldeschein-Formulare unter `/form/*` sind geschützt.
+
 ## 🌟 Features
 
 ### ✅ Vollständig implementiert

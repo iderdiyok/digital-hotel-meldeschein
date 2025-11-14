@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { guestSubmissionSchema } from '@/lib/validations';
-import { readSubmissions, writeSubmissions } from '@/lib/data';
 import { sendHotelEmail } from '@/lib/email-simple';
 
 export async function POST(request: NextRequest) {
@@ -11,7 +10,7 @@ export async function POST(request: NextRequest) {
     // Validate submission data
         const validatedData = guestSubmissionSchema.parse(body);
         
-    // Create submission object (but don't save to file on Vercel)
+    // Create submission object (without local storage)
     const newSubmission = {
       id: `submission_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       ...validatedData,
@@ -19,24 +18,9 @@ export async function POST(request: NextRequest) {
       status: 'pending',
     };
     
-    // Try to save locally (will fail on Vercel, but that's OK)
+    // Send email directly (no local storage, no PDF URL needed)
     try {
-      const submissions = await readSubmissions();
-      submissions.push(newSubmission);
-      await writeSubmissions(submissions);
-          } catch (fileError) {
-          }
-    
-    
-    
-    // Send email directly here instead of external API call
-                
-            
-    try {
-      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-      const pdfUrl = `${baseUrl}/api/submissions/${newSubmission.id}/pdf`;
-            
-      const emailResult = await sendHotelEmail(newSubmission, pdfUrl);
+      const emailResult = await sendHotelEmail(newSubmission);
       
       if (emailResult.success) {
         console.log('✅ E-Mail erfolgreich versendet!');                        
@@ -93,18 +77,11 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    // Try to read submissions, but return empty array if file doesn't exist (Vercel)
-    let submissions = [];
-    try {
-      submissions = await readSubmissions();
-    } catch (fileError) {
-            submissions = [];
-    }
-
+    // No local storage anymore - return empty array
     return NextResponse.json({
       success: true,
-      data: submissions,
-      message: submissions.length === 0 ? 'No submissions stored (serverless environment)' : undefined
+      data: [],
+      message: 'Local storage disabled - submissions are only sent via email'
     });
   } catch (error) {
     

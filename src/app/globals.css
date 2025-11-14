@@ -2,6 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 
+/* React Date Picker Styles */
+@import 'react-date-picker/dist/DatePicker.css';
+@import 'react-calendar/dist/Calendar.css';
+
+/* Custom Styling für React Date Picker */
+.react-date-picker {
+  width: 100% !important;
+}
+
+.react-date-picker__wrapper {
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.375rem !important;
+  background: white !important;
+  padding: 0.5rem 0.75rem !important;
+  font-size: 1rem !important;
+}
+
+.react-date-picker__wrapper:focus-within {
+  outline: 2px solid transparent !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 2px #3b82f6 !important;
+  border-color: transparent !important;
+}
+
+.react-date-picker__inputGroup {
+  color: #111827 !important;
+}
+
+.react-date-picker__inputGroup__input {
+  color: #111827 !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.react-date-picker__calendar {
+  z-index: 1000 !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.react-calendar {
+  background: white !important;
+  border: none !important;
+  font-family: inherit !important;
+}
+
+.react-calendar__navigation button {
+  color: #374151 !important;
+  background: none !important;
+}
+
+.react-calendar__navigation button:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.react-calendar__tile {
+  color: #374151 !important;
+  background: none !important;
+}
+
+.react-calendar__tile:enabled:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.react-calendar__tile--active {
+  background: #3b82f6 !important;
+  color: white !important;
+}
+
+.react-calendar__tile--now {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

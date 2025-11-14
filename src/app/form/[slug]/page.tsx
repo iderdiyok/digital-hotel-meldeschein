@@ -168,6 +168,10 @@ export default function GuestFormPage() {
 
   // Signature pad functions
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    // Verhindere Scrollen und andere Touch-Aktionen
+    e.preventDefault();
+    e.stopPropagation();
+    
     setIsDrawing(true);
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -187,11 +191,19 @@ export default function GuestFormPage() {
       clientY = e.clientY;
     }
     
-    ctx.moveTo(clientX - rect.left, clientY - rect.top);
+    // Korrekte Skalierung berücksichtigen
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    ctx.moveTo((clientX - rect.left) * scaleX, (clientY - rect.top) * scaleY);
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
+    
+    // Verhindere Scrollen und andere Touch-Aktionen
+    e.preventDefault();
+    e.stopPropagation();
     
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -209,11 +221,20 @@ export default function GuestFormPage() {
       clientY = e.clientY;
     }
     
-    ctx.lineTo(clientX - rect.left, clientY - rect.top);
+    // Korrekte Skalierung berücksichtigen
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    ctx.lineTo((clientX - rect.left) * scaleX, (clientY - rect.top) * scaleY);
     ctx.stroke();
   };
 
-  const stopDrawing = () => {
+  const stopDrawing = (e?: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     setIsDrawing(false);
     const canvas = canvasRef.current;
     if (canvas) {
@@ -454,7 +475,7 @@ export default function GuestFormPage() {
             value={typeof value === 'boolean' ? '' : value}
             onChange={handleInputChange}
             required={field.required}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 ${
               hasError 
                 ? 'border-red-500 focus:ring-red-500' 
                 : 'border-gray-300 focus:ring-blue-500'
@@ -471,7 +492,8 @@ export default function GuestFormPage() {
             onChange={(newValue) => handleDateChange(fieldName, newValue)}
             placeholder={t.placeholders.dateOfBirth}
             required={field.required}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+            showCalendar={false}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
               hasError 
                 ? 'border-red-500 focus:ring-red-500' 
                 : 'border-gray-300 focus:ring-blue-500'
@@ -485,7 +507,20 @@ export default function GuestFormPage() {
             onChange={handleInputChange}
             placeholder={t.placeholders.nationality}
             required={field.required}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
+              hasError 
+                ? 'border-red-500 focus:ring-red-500' 
+                : 'border-gray-300 focus:ring-blue-500'
+            }`}
+          />
+        ) : fieldName === 'checkIn' || fieldName === 'checkOut' ? (
+          <DateInput
+            name={fieldName}
+            value={typeof value === 'boolean' ? '' : String(value)}
+            onChange={(newValue) => handleDateChange(fieldName, newValue)}
+            required={field.required}
+            showCalendar={true}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
               hasError 
                 ? 'border-red-500 focus:ring-red-500' 
                 : 'border-gray-300 focus:ring-blue-500'
@@ -493,13 +528,12 @@ export default function GuestFormPage() {
           />
         ) : (
           <input
-            type={fieldName.includes('In') || fieldName.includes('Out') ? 'date' : 
-                  fieldName === 'email' ? 'email' : 'text'}
+            type={fieldName === 'email' ? 'email' : 'text'}
             name={fieldName}
             value={typeof value === 'boolean' ? '' : value}
             onChange={handleInputChange}
             required={field.required}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
               hasError 
                 ? 'border-red-500 focus:ring-red-500' 
                 : 'border-gray-300 focus:ring-blue-500'
@@ -519,8 +553,8 @@ export default function GuestFormPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-8" style={{ overflow: 'visible' }}>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8" style={{ overflow: 'visible' }}>
         {/* Back Button */}
         <div className="mb-6">
           <button
@@ -535,7 +569,7 @@ export default function GuestFormPage() {
           </button>
         </div>
         
-        <div className="bg-white rounded-lg shadow-lg">
+        <div className="bg-white rounded-lg shadow-lg" style={{ overflow: 'visible' }}>
           {/* Header */}
           <div className="px-6 py-4 border-b border-gray-200" style={{ backgroundColor: hotel.themeColor + '10' }}>
             <div className="flex justify-between items-center">
@@ -631,7 +665,7 @@ export default function GuestFormPage() {
                             value={traveller.firstName}
                             onChange={(e) => handleCoTravellerChange(index, 'firstName', e.target.value)}
                             required
-                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
                               fieldErrors[`coTraveller_${index}_firstName`] 
                                 ? 'border-red-500 focus:ring-red-500' 
                                 : 'border-gray-300 focus:ring-blue-500'
@@ -653,7 +687,7 @@ export default function GuestFormPage() {
                             value={traveller.lastName}
                             onChange={(e) => handleCoTravellerChange(index, 'lastName', e.target.value)}
                             required
-                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
                               fieldErrors[`coTraveller_${index}_lastName`] 
                                 ? 'border-red-500 focus:ring-red-500' 
                                 : 'border-gray-300 focus:ring-blue-500'
@@ -675,7 +709,8 @@ export default function GuestFormPage() {
                             onChange={(newValue) => handleCoTravellerDateChange(index, newValue)}
                             placeholder={t.placeholders.dateOfBirth}
                             required
-                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                            showCalendar={false}
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
                               fieldErrors[`coTraveller_${index}_dateOfBirth`] 
                                 ? 'border-red-500 focus:ring-red-500' 
                                 : 'border-gray-300 focus:ring-blue-500'
@@ -698,7 +733,7 @@ export default function GuestFormPage() {
                             value={traveller.nationality}
                             onChange={(e) => handleCoTravellerChange(index, 'nationality', e.target.value)}
                             required
-                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
                               fieldErrors[`coTraveller_${index}_nationality`] 
                                 ? 'border-red-500 focus:ring-red-500' 
                                 : 'border-gray-300 focus:ring-blue-500'
@@ -723,20 +758,30 @@ export default function GuestFormPage() {
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 {t.signature.title} <span className="text-red-500">*</span>
               </h3>
-              <div className={`border-2 rounded-md p-4 ${!signature && error ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}>
+              <div 
+                className={`border-2 rounded-md p-4 ${!signature && error ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
+              >
                 <canvas
                   ref={canvasRef}
                   width={400}
                   height={200}
                   className="border border-gray-200 w-full cursor-crosshair"
-                  style={{ touchAction: 'none' }}
+                  style={{ 
+                    touchAction: 'none',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none'
+                  }}
                   onMouseDown={startDrawing}
                   onMouseMove={draw}
-                  onMouseUp={stopDrawing}
-                  onMouseLeave={stopDrawing}
+                  onMouseUp={() => stopDrawing()}
+                  onMouseLeave={() => stopDrawing()}
                   onTouchStart={startDrawing}
                   onTouchMove={draw}
-                  onTouchEnd={stopDrawing}
+                  onTouchEnd={() => stopDrawing()}
+                  onTouchCancel={() => stopDrawing()}
                 />
                 <div className="mt-2 flex justify-between items-center">
                   <p className="text-sm text-gray-500">

@@ -3,30 +3,29 @@ import { generatePDF } from './pdf-builder';
 
 // SMTP Verbindung testen
 export async function testSMTPConnection() {
-  try {    
+  try {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'mail.hotel-harburger-hof.de',
       port: parseInt(process.env.SMTP_PORT || '587'),
       secure: process.env.SMTP_PORT === '465',
       auth: {
         user: process.env.SMTP_USER || 'meldeschein@hotel-harburger-hof.de',
-        pass: process.env.SMTP_PASS || 'ihr-smtp-passwort'
+        pass: process.env.SMTP_PASS || 'ihr-smtp-passwort',
       },
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+      },
     });
 
     // Verbindung testen
     await transporter.verify();
-    
+
     return { success: true, message: 'SMTP Server ist erreichbar' };
-    
   } catch (error) {
     console.error('❌ SMTP Verbindung fehlgeschlagen:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unbekannter SMTP Fehler' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unbekannter SMTP Fehler',
     };
   }
 }
@@ -34,7 +33,6 @@ export async function testSMTPConnection() {
 // Vercel-kompatible E-Mail Versendung für Meldescheine
 export async function sendHotelEmail(submission: any) {
   try {
-    
     // E-Mail Nachricht
     const emailSubject = `Neuer Meldeschein - ${submission.firstName} ${submission.lastName}`;
     const emailText = `Sehr geehrte Damen und Herren,
@@ -52,24 +50,29 @@ Mit freundlichen Grüßen,
 Digitales Meldeschein-System
 Hotel Harburger Hof`;
 
-    
     // Vercel-kompatible PDF-Generierung
     let pdfBuffer: Buffer | null = null;
-    
+
     try {
       console.log('📄 Starte React-PDF Generierung (browserlos)...');
       pdfBuffer = await generatePDF(submission);
-      
+
       if (pdfBuffer) {
-        console.log('✅ PDF erfolgreich generiert (' + Math.round(pdfBuffer.length / 1024) + ' KB)');
+        console.log(
+          '✅ PDF erfolgreich generiert (' +
+            Math.round(pdfBuffer.length / 1024) +
+            ' KB)'
+        );
       } else {
-        console.log('⚠️ PDF-Generierung fehlgeschlagen, verwende HTML-Fallback');
+        console.log(
+          '⚠️ PDF-Generierung fehlgeschlagen, verwende HTML-Fallback'
+        );
       }
     } catch (pdfError) {
       console.error('❌ PDF-Generierung fehlgeschlagen:', pdfError);
       pdfBuffer = null;
     }
-    
+
     // SMTP Transporter erstellen
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'mail.hotel-harburger-hof.de',
@@ -77,11 +80,11 @@ Hotel Harburger Hof`;
       secure: process.env.SMTP_PORT === '465',
       auth: {
         user: process.env.SMTP_USER || 'meldeschein@hotel-harburger-hof.de',
-        pass: process.env.SMTP_PASS || 'ihr-smtp-passwort'
+        pass: process.env.SMTP_PASS || 'ihr-smtp-passwort',
       },
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+      },
     });
 
     // E-Mail Optionen - immer mit professionellem HTML-Template
@@ -109,26 +112,38 @@ Hotel Harburger Hof`;
             <strong>Zweck des Aufenthalts:</strong> ${submission.purpose === 'business' ? 'Geschäftsreisen' : submission.purpose === 'private' ? 'Privat' : submission.purpose || '-'}
           </div>
           
-          ${submission.coTravellers && submission.coTravellers.length > 0 ? `
+          ${
+            submission.coTravellers && submission.coTravellers.length > 0
+              ? `
           <div style="margin: 20px 0;">
             <h3 style="color: #2563eb; margin-bottom: 10px;">👥 Mitreisende (${submission.coTravellers.length})</h3>
-            ${submission.coTravellers.map((traveller: any, index: number) => `
+            ${submission.coTravellers
+              .map(
+                (traveller: any, index: number) => `
               <div style="background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 5px;">
                 <strong>Mitreisende/r #${index + 1}</strong><br>
                 <strong>Name:</strong> ${traveller.firstName} ${traveller.lastName}<br>
                 <strong>Geburtsdatum:</strong> ${traveller.dateOfBirth}<br>
                 <strong>Staatsangehörigkeit:</strong> ${traveller.nationality}
               </div>
-            `).join('')}
+            `
+              )
+              .join('')}
           </div>
-          ` : ''}
+          `
+              : ''
+          }
           
-          ${submission.signature ? `
+          ${
+            submission.signature
+              ? `
           <div style="margin: 20px 0; text-align: center;">
             <h3 style="color: #2563eb;">✍️ Digitale Unterschrift</h3>
             <img src="${submission.signature}" alt="Digitale Unterschrift" style="max-width: 250px; border: 1px solid #ddd;" />
           </div>
-          ` : ''}
+          `
+              : ''
+          }
           
           <p>${pdfBuffer ? 'Das PDF-Dokument enthält alle erforderlichen Angaben gemäß Meldegesetz.' : 'Alle erforderlichen Angaben gemäß Meldegesetz sind oben aufgeführt.'}</p>
           
@@ -143,17 +158,17 @@ Hotel Harburger Hof`;
             ${pdfBuffer ? 'Mit PDF-Anhang' : 'PDF-Generierung auf Vercel nicht verfügbar - alle Daten sind in dieser E-Mail enthalten'}
           </div>
         </div>
-      `
+      `,
     };
-    
+
     // PDF als Anhang hinzufügen, falls vorhanden
     if (pdfBuffer) {
       mailOptions.attachments = [
         {
           filename: `Meldeschein_${submission.firstName}_${submission.lastName}_${submission.id.split('_')[1] || 'new'}.pdf`,
           content: pdfBuffer,
-          contentType: 'application/pdf'
-        }
+          contentType: 'application/pdf',
+        },
       ];
       console.log('📎 PDF-Anhang hinzugefügt');
     } else {
@@ -162,24 +177,25 @@ Hotel Harburger Hof`;
 
     // E-Mail versenden
     const result = await transporter.sendMail(mailOptions);
-    console.log("✅ E-MAIL ERFOLGREICH GESENDET:", result.messageId);
-    
+    console.log('✅ E-MAIL ERFOLGREICH GESENDET:', result.messageId);
+
     return {
       success: true,
-      message: pdfBuffer ? 
-        "E-Mail mit PDF-Anhang erfolgreich versendet" : 
-        "E-Mail erfolgreich versendet (HTML-Format, kein PDF aufgrund von Vercel-Beschränkungen)",
+      message: pdfBuffer
+        ? 'E-Mail mit PDF-Anhang erfolgreich versendet'
+        : 'E-Mail erfolgreich versendet (HTML-Format, kein PDF aufgrund von Vercel-Beschränkungen)',
       recipient: mailOptions.to,
       messageId: result.messageId,
       pdfAttached: !!pdfBuffer,
-      pdfSize: pdfBuffer ? Math.round(pdfBuffer.length / 1024) + ' KB' : null
+      pdfSize: pdfBuffer ? Math.round(pdfBuffer.length / 1024) + ' KB' : null,
     };
-    
   } catch (error) {
-    console.error("🚨 E-MAIL VERSAND FEHLGESCHLAGEN:", error);
+    console.error('🚨 E-MAIL VERSAND FEHLGESCHLAGEN:', error);
     return {
       success: false,
-      error: "E-Mail konnte nicht versendet werden: " + (error instanceof Error ? error.message : 'Unbekannter Fehler')
+      error:
+        'E-Mail konnte nicht versendet werden: ' +
+        (error instanceof Error ? error.message : 'Unbekannter Fehler'),
     };
   }
 }

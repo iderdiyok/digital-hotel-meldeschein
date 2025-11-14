@@ -9,7 +9,9 @@ interface LanguageContextType {
   t: typeof translations.de | typeof translations.en;
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const LanguageContext = createContext<LanguageContextType | undefined>(
+  undefined
+);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>('de');
@@ -30,7 +32,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const value = {
     language,
     setLanguage,
-    t: translations[language]
+    t: translations[language],
   };
 
   return (

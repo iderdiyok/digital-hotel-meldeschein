@@ -1,7 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { formatDateInput, handleDateKeyPress, validateDateString } from '@/lib/dateFormatter';
+import {
+  formatDateInput,
+  handleDateKeyPress,
+  validateDateString,
+} from '@/lib/dateFormatter';
 
 // Dynamischer Import für react-date-picker (nur im Browser)
 import dynamic from 'next/dynamic';
@@ -19,35 +23,36 @@ interface DateInputProps {
   showCalendar?: boolean;
 }
 
-export default function DateInput({ 
-  value, 
-  onChange, 
-  placeholder = "TT.MM.JJJJ", 
+export default function DateInput({
+  value,
+  onChange,
+  placeholder = 'TT.MM.JJJJ',
   required = false,
-  className = "",
+  className = '',
   name,
-  showCalendar = false
+  showCalendar = false,
 }: DateInputProps) {
-  
   const [isMobile, setIsMobile] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    
+
     // Mobile-Erkennung (iPad, iPhone, Android)
     const checkIsMobile = () => {
-      return /iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent) || 
-             window.innerWidth <= 1024; // Auch große Tablets erfassen
+      return (
+        /iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent) ||
+        window.innerWidth <= 1024
+      ); // Auch große Tablets erfassen
     };
-    
+
     setIsMobile(checkIsMobile());
-    
+
     // Reagiere auf Bildschirmgrößenänderungen
     const handleResize = () => {
       setIsMobile(checkIsMobile());
     };
-    
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -75,7 +80,7 @@ export default function DateInput({
       return (
         <div className={className}>
           <DatePicker
-            onChange={(date) => {
+            onChange={date => {
               // TypeScript-sichere Konvertierung
               if (Array.isArray(date)) return; // Range nicht unterstützt
               onChange(convertDateToString(date));
@@ -94,7 +99,7 @@ export default function DateInput({
     return (
       <div className={className}>
         <DatePicker
-          onChange={(date) => {
+          onChange={date => {
             // TypeScript-sichere Konvertierung
             if (Array.isArray(date)) return; // Range nicht unterstützt
             onChange(convertDateToString(date));
@@ -116,7 +121,7 @@ export default function DateInput({
         type="text"
         name={name}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         required={required}
         className={className}
@@ -167,7 +172,7 @@ export default function DateInput({
         autoComplete="off"
         inputMode="numeric" // Hilft bei Touch-Geräten
       />
-      
+
       {/* Validierungs-Indikator nur bei Text-Input */}
       {showValidation && (
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -177,9 +182,7 @@ export default function DateInput({
           {isComplete && !isValid && (
             <span className="text-red-500 text-lg">✗</span>
           )}
-          {!isComplete && (
-            <span className="text-yellow-500 text-sm">...</span>
-          )}
+          {!isComplete && <span className="text-yellow-500 text-sm">...</span>}
         </div>
       )}
     </div>

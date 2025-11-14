@@ -42,14 +42,14 @@ export default function GuestFormPage() {
   const router = useRouter();
   const slug = params.slug as string;
   const { t } = useLanguage();
-  
+
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  
+
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
@@ -63,7 +63,7 @@ export default function GuestFormPage() {
     coTravellers: [],
     privacyAccepted: false,
   });
-  
+
   const [signature, setSignature] = useState<string | null>(null);
   const [hotelEmail, setHotelEmail] = useState<string>('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -93,7 +93,7 @@ export default function GuestFormPage() {
       setLoading(true);
       const response = await fetch(`/api/hotels/${slug}`);
       const data = await response.json();
-      
+
       if (data.success) {
         setHotel(data.data);
       } else {
@@ -107,19 +107,21 @@ export default function GuestFormPage() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value, type } = e.target;
     let newValue: string | number | boolean = value;
-    
+
     if (type === 'number') {
       newValue = parseInt(value);
     } else if (type === 'checkbox') {
       newValue = (e.target as HTMLInputElement).checked;
     }
-    
+
     setFormData(prev => ({
       ...prev,
-      [name]: newValue
+      [name]: newValue,
     }));
   };
 
@@ -127,17 +129,21 @@ export default function GuestFormPage() {
   const handleDateChange = (fieldName: string, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [fieldName]: value
+      [fieldName]: value,
     }));
   };
 
   // Co-travellers functions
-  const handleCoTravellerChange = (index: number, field: keyof Traveller, value: string) => {
+  const handleCoTravellerChange = (
+    index: number,
+    field: keyof Traveller,
+    value: string
+  ) => {
     setFormData(prev => ({
       ...prev,
-      coTravellers: prev.coTravellers.map((traveller, i) => 
+      coTravellers: prev.coTravellers.map((traveller, i) =>
         i === index ? { ...traveller, [field]: value } : traveller
-      )
+      ),
     }));
   };
 
@@ -149,11 +155,15 @@ export default function GuestFormPage() {
   // Funktionen für Gäste-Management
   const addCoTraveller = () => {
     // Maximale Anzahl von Gästen begrenzen (z.B. 10)
-    if (formData.coTravellers.length < 9) { // 9 Mitreisende + 1 Hauptgast = 10 Gäste max
+    if (formData.coTravellers.length < 9) {
+      // 9 Mitreisende + 1 Hauptgast = 10 Gäste max
       setFormData(prev => ({
         ...prev,
         numberOfGuests: prev.numberOfGuests + 1,
-        coTravellers: [...prev.coTravellers, { firstName: '', lastName: '', dateOfBirth: '', nationality: '' }]
+        coTravellers: [
+          ...prev.coTravellers,
+          { firstName: '', lastName: '', dateOfBirth: '', nationality: '' },
+        ],
       }));
     }
   };
@@ -162,26 +172,28 @@ export default function GuestFormPage() {
     setFormData(prev => ({
       ...prev,
       numberOfGuests: Math.max(1, prev.numberOfGuests - 1),
-      coTravellers: prev.coTravellers.filter((_, i) => i !== index)
+      coTravellers: prev.coTravellers.filter((_, i) => i !== index),
     }));
   };
 
   // Signature pad functions
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const startDrawing = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+  ) => {
     // Verhindere Scrollen und andere Touch-Aktionen
     e.preventDefault();
     e.stopPropagation();
-    
+
     setIsDrawing(true);
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     ctx.beginPath();
-    
+
     let clientX: number, clientY: number;
     if ('touches' in e) {
       clientX = e.touches[0].clientX;
@@ -190,28 +202,30 @@ export default function GuestFormPage() {
       clientX = e.clientX;
       clientY = e.clientY;
     }
-    
+
     // Korrekte Skalierung berücksichtigen
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    
+
     ctx.moveTo((clientX - rect.left) * scaleX, (clientY - rect.top) * scaleY);
   };
 
-  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const draw = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+  ) => {
     if (!isDrawing) return;
-    
+
     // Verhindere Scrollen und andere Touch-Aktionen
     e.preventDefault();
     e.stopPropagation();
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     let clientX: number, clientY: number;
     if ('touches' in e) {
       clientX = e.touches[0].clientX;
@@ -220,21 +234,25 @@ export default function GuestFormPage() {
       clientX = e.clientX;
       clientY = e.clientY;
     }
-    
+
     // Korrekte Skalierung berücksichtigen
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    
+
     ctx.lineTo((clientX - rect.left) * scaleX, (clientY - rect.top) * scaleY);
     ctx.stroke();
   };
 
-  const stopDrawing = (e?: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const stopDrawing = (
+    e?:
+      | React.MouseEvent<HTMLCanvasElement>
+      | React.TouchEvent<HTMLCanvasElement>
+  ) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    
+
     setIsDrawing(false);
     const canvas = canvasRef.current;
     if (canvas) {
@@ -245,23 +263,23 @@ export default function GuestFormPage() {
   const clearSignature = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setSignature(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Lösche alle vorherigen Fehler
     setError(null);
     setFieldErrors({});
-    
+
     const newFieldErrors: Record<string, string> = {};
-    
+
     // Prüfe ob Canvas existiert und ob etwas gezeichnet wurde
     const canvas = canvasRef.current;
     if (!canvas) {
@@ -283,13 +301,16 @@ export default function GuestFormPage() {
       return index % 4 === 3 && pixel > 0;
     });
 
-    console.log('Signature validation:', { hasDrawing, signature: !!signature });
+    console.log('Signature validation:', {
+      hasDrawing,
+      signature: !!signature,
+    });
 
     if (!hasDrawing || !signature) {
       setError(t.validation.signatureRequired);
       return;
     }
-    
+
     // Validiere Hauptgast-Pflichtfelder
     if (!formData.firstName) {
       newFieldErrors.firstName = t.validation.fieldErrors.firstName;
@@ -309,47 +330,52 @@ export default function GuestFormPage() {
     if (!formData.checkOut) {
       newFieldErrors.checkOut = t.validation.fieldErrors.checkOut;
     }
-    
+
     // Validiere Geburtsdatum
     if (!formData.dateOfBirth) {
       newFieldErrors.dateOfBirth = t.validation.fieldErrors.dateOfBirth;
     } else if (!validateDateString(formData.dateOfBirth)) {
       newFieldErrors.dateOfBirth = t.validation.fieldErrors.dateOfBirth;
     }
-    
+
     // Validiere Mitreisende
     formData.coTravellers.forEach((traveller, index) => {
       if (!traveller.firstName) {
-        newFieldErrors[`coTraveller_${index}_firstName`] = t.validation.fieldErrors.firstName;
+        newFieldErrors[`coTraveller_${index}_firstName`] =
+          t.validation.fieldErrors.firstName;
       }
       if (!traveller.lastName) {
-        newFieldErrors[`coTraveller_${index}_lastName`] = t.validation.fieldErrors.lastName;
+        newFieldErrors[`coTraveller_${index}_lastName`] =
+          t.validation.fieldErrors.lastName;
       }
       if (!traveller.nationality) {
-        newFieldErrors[`coTraveller_${index}_nationality`] = t.validation.fieldErrors.nationality;
+        newFieldErrors[`coTraveller_${index}_nationality`] =
+          t.validation.fieldErrors.nationality;
       }
       if (!traveller.dateOfBirth) {
-        newFieldErrors[`coTraveller_${index}_dateOfBirth`] = t.validation.fieldErrors.dateOfBirth;
+        newFieldErrors[`coTraveller_${index}_dateOfBirth`] =
+          t.validation.fieldErrors.dateOfBirth;
       } else if (!validateDateString(traveller.dateOfBirth)) {
-        newFieldErrors[`coTraveller_${index}_dateOfBirth`] = t.validation.fieldErrors.dateOfBirth;
+        newFieldErrors[`coTraveller_${index}_dateOfBirth`] =
+          t.validation.fieldErrors.dateOfBirth;
       }
     });
-    
+
     // Wenn es Feldfehlerfehler gibt, zeige sie an
     if (Object.keys(newFieldErrors).length > 0) {
       setFieldErrors(newFieldErrors);
       return;
     }
-    
+
     // Validiere Datenschutz-Zustimmung
     if (!formData.privacyAccepted) {
       setError(t.validation.privacyRequired);
       return;
     }
-    
+
     setSubmitting(true);
     setError(null);
-    
+
     try {
       const response = await fetch('/api/submissions', {
         method: 'POST',
@@ -362,9 +388,9 @@ export default function GuestFormPage() {
           hotelId: hotel?.id,
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         // Submission erfolgreich
         if (data.data?.hotelEmail) {
@@ -397,8 +423,12 @@ export default function GuestFormPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-500 text-xl mb-4">❌ Hotel nicht gefunden</div>
-          <p className="text-gray-600">Die angeforderte Seite existiert nicht.</p>
+          <div className="text-red-500 text-xl mb-4">
+            ❌ Hotel nicht gefunden
+          </div>
+          <p className="text-gray-600">
+            Die angeforderte Seite existiert nicht.
+          </p>
         </div>
       </div>
     );
@@ -413,27 +443,27 @@ export default function GuestFormPage() {
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               {t.success.title}
             </h1>
-            <p className="text-gray-600 mb-4">
-              {t.success.message}
-            </p>
+            <p className="text-gray-600 mb-4">{t.success.message}</p>
             <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded mb-6">
               <p className="mb-1">📧 {t.success.emailSentTo}</p>
-              <p className="font-mono text-xs">{hotelEmail || 'Hotel E-Mail'}</p>
+              <p className="font-mono text-xs">
+                {hotelEmail || 'Hotel E-Mail'}
+              </p>
             </div>
-            
+
             {/* Schließen Button */}
             <div className="space-y-3">
               <button
-                onClick={() => window.location.href = '/'}
+                onClick={() => (window.location.href = '/')}
                 className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
                 {t.success.backToHome}
               </button>
-              
+
               <p className="text-xs text-gray-400 text-center">
                 {t.success.pdfSentInfo}
               </p>
-              
+
               <p className="text-xs text-gray-400 text-center">
                 {t.success.closeWindow}
               </p>
@@ -444,8 +474,16 @@ export default function GuestFormPage() {
     );
   }
 
-  const renderField = (fieldName: string, field: { required: boolean; visible: boolean }) => {
-    if (!field.visible || fieldName === 'coTravellers' || fieldName === 'numberOfGuests') return null;
+  const renderField = (
+    fieldName: string,
+    field: { required: boolean; visible: boolean }
+  ) => {
+    if (
+      !field.visible ||
+      fieldName === 'coTravellers' ||
+      fieldName === 'numberOfGuests'
+    )
+      return null;
 
     const fieldLabels: Record<string, string> = {
       firstName: t.fields.firstName,
@@ -462,7 +500,7 @@ export default function GuestFormPage() {
     const label = fieldLabels[fieldName] || fieldName;
     const value = formData[fieldName as keyof Omit<FormData, 'coTravellers'>];
     const hasError = fieldErrors[fieldName];
-    
+
     return (
       <div key={fieldName} className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -476,8 +514,8 @@ export default function GuestFormPage() {
             onChange={handleInputChange}
             required={field.required}
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 ${
-              hasError 
-                ? 'border-red-500 focus:ring-red-500' 
+              hasError
+                ? 'border-red-500 focus:ring-red-500'
                 : 'border-gray-300 focus:ring-blue-500'
             }`}
           >
@@ -489,13 +527,13 @@ export default function GuestFormPage() {
           <DateInput
             name={fieldName}
             value={typeof value === 'boolean' ? '' : String(value)}
-            onChange={(newValue) => handleDateChange(fieldName, newValue)}
+            onChange={newValue => handleDateChange(fieldName, newValue)}
             placeholder={t.placeholders.dateOfBirth}
             required={field.required}
             showCalendar={false}
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
-              hasError 
-                ? 'border-red-500 focus:ring-red-500' 
+              hasError
+                ? 'border-red-500 focus:ring-red-500'
                 : 'border-gray-300 focus:ring-blue-500'
             }`}
           />
@@ -508,8 +546,8 @@ export default function GuestFormPage() {
             placeholder={t.placeholders.nationality}
             required={field.required}
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
-              hasError 
-                ? 'border-red-500 focus:ring-red-500' 
+              hasError
+                ? 'border-red-500 focus:ring-red-500'
                 : 'border-gray-300 focus:ring-blue-500'
             }`}
           />
@@ -517,12 +555,12 @@ export default function GuestFormPage() {
           <DateInput
             name={fieldName}
             value={typeof value === 'boolean' ? '' : String(value)}
-            onChange={(newValue) => handleDateChange(fieldName, newValue)}
+            onChange={newValue => handleDateChange(fieldName, newValue)}
             required={field.required}
             showCalendar={true}
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
-              hasError 
-                ? 'border-red-500 focus:ring-red-500' 
+              hasError
+                ? 'border-red-500 focus:ring-red-500'
                 : 'border-gray-300 focus:ring-blue-500'
             }`}
           />
@@ -534,13 +572,13 @@ export default function GuestFormPage() {
             onChange={handleInputChange}
             required={field.required}
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
-              hasError 
-                ? 'border-red-500 focus:ring-red-500' 
+              hasError
+                ? 'border-red-500 focus:ring-red-500'
                 : 'border-gray-300 focus:ring-blue-500'
             }`}
           />
         )}
-        
+
         {/* Feldspezifische Fehlermeldung */}
         {hasError && (
           <div className="mt-1 text-sm text-red-600 flex items-center">
@@ -553,8 +591,14 @@ export default function GuestFormPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8" style={{ overflow: 'visible' }}>
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8" style={{ overflow: 'visible' }}>
+    <div
+      className="min-h-screen bg-gray-50 py-8"
+      style={{ overflow: 'visible' }}
+    >
+      <div
+        className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8"
+        style={{ overflow: 'visible' }}
+      >
         {/* Back Button */}
         <div className="mb-6">
           <button
@@ -562,24 +606,38 @@ export default function GuestFormPage() {
             className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-white rounded-md transition-colors shadow-sm"
             type="button"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             <span className="text-sm font-medium">{t.form.backToHome}</span>
           </button>
         </div>
-        
-        <div className="bg-white rounded-lg shadow-lg" style={{ overflow: 'visible' }}>
+
+        <div
+          className="bg-white rounded-lg shadow-lg"
+          style={{ overflow: 'visible' }}
+        >
           {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200" style={{ backgroundColor: hotel.themeColor + '10' }}>
+          <div
+            className="px-6 py-4 border-b border-gray-200"
+            style={{ backgroundColor: hotel.themeColor + '10' }}
+          >
             <div className="flex justify-between items-center">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
                   {hotel.name}
                 </h1>
-                <p className="text-gray-600 mt-1">
-                  {t.form.title}
-                </p>
+                <p className="text-gray-600 mt-1">{t.form.title}</p>
               </div>
               <LanguageSwitcher />
             </div>
@@ -614,7 +672,9 @@ export default function GuestFormPage() {
                       👥 {t.form.coTravellers}
                     </h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      {t.guests.totalGuests}: {t.guests.mainGuestPlus}{formData.coTravellers.length}{t.guests.coTravellers}
+                      {t.guests.totalGuests}: {t.guests.mainGuestPlus}
+                      {formData.coTravellers.length}
+                      {t.guests.coTravellers}
                     </p>
                     {formData.coTravellers.length >= 9 && (
                       <p className="text-xs text-amber-600 mt-1">
@@ -633,7 +693,7 @@ export default function GuestFormPage() {
                   </button>
                 </div>
               </div>
-              
+
               {formData.coTravellers.length === 0 ? (
                 <p className="text-gray-500 italic text-center py-4">
                   {t.guests.noCoTravellers}
@@ -641,7 +701,10 @@ export default function GuestFormPage() {
               ) : (
                 <div className="space-y-4">
                   {formData.coTravellers.map((traveller, index) => (
-                    <div key={index} className="p-4 border border-gray-200 rounded-md bg-gray-50">
+                    <div
+                      key={index}
+                      className="p-4 border border-gray-200 rounded-md bg-gray-50"
+                    >
                       <div className="flex justify-between items-center mb-3">
                         <h4 className="font-medium text-gray-700">
                           Mitreisende/r #{index + 1}
@@ -652,22 +715,31 @@ export default function GuestFormPage() {
                           className="flex items-center space-x-1 px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
                         >
                           <span className="text-sm">×</span>
-                          <span className="text-sm">{t.guests.removeCoTraveller}</span>
+                          <span className="text-sm">
+                            {t.guests.removeCoTraveller}
+                          </span>
                         </button>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            {t.fields.firstName} <span className="text-red-500">*</span>
+                            {t.fields.firstName}{' '}
+                            <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
                             value={traveller.firstName}
-                            onChange={(e) => handleCoTravellerChange(index, 'firstName', e.target.value)}
+                            onChange={e =>
+                              handleCoTravellerChange(
+                                index,
+                                'firstName',
+                                e.target.value
+                              )
+                            }
                             required
                             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
-                              fieldErrors[`coTraveller_${index}_firstName`] 
-                                ? 'border-red-500 focus:ring-red-500' 
+                              fieldErrors[`coTraveller_${index}_firstName`]
+                                ? 'border-red-500 focus:ring-red-500'
                                 : 'border-gray-300 focus:ring-blue-500'
                             }`}
                           />
@@ -680,16 +752,23 @@ export default function GuestFormPage() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            {t.fields.lastName} <span className="text-red-500">*</span>
+                            {t.fields.lastName}{' '}
+                            <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
                             value={traveller.lastName}
-                            onChange={(e) => handleCoTravellerChange(index, 'lastName', e.target.value)}
+                            onChange={e =>
+                              handleCoTravellerChange(
+                                index,
+                                'lastName',
+                                e.target.value
+                              )
+                            }
                             required
                             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
-                              fieldErrors[`coTraveller_${index}_lastName`] 
-                                ? 'border-red-500 focus:ring-red-500' 
+                              fieldErrors[`coTraveller_${index}_lastName`]
+                                ? 'border-red-500 focus:ring-red-500'
                                 : 'border-gray-300 focus:ring-blue-500'
                             }`}
                           />
@@ -702,17 +781,20 @@ export default function GuestFormPage() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            {t.fields.dateOfBirth} <span className="text-red-500">*</span>
+                            {t.fields.dateOfBirth}{' '}
+                            <span className="text-red-500">*</span>
                           </label>
                           <DateInput
                             value={traveller.dateOfBirth}
-                            onChange={(newValue) => handleCoTravellerDateChange(index, newValue)}
+                            onChange={newValue =>
+                              handleCoTravellerDateChange(index, newValue)
+                            }
                             placeholder={t.placeholders.dateOfBirth}
                             required
                             showCalendar={false}
                             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
-                              fieldErrors[`coTraveller_${index}_dateOfBirth`] 
-                                ? 'border-red-500 focus:ring-red-500' 
+                              fieldErrors[`coTraveller_${index}_dateOfBirth`]
+                                ? 'border-red-500 focus:ring-red-500'
                                 : 'border-gray-300 focus:ring-blue-500'
                             }`}
                           />
@@ -725,17 +807,24 @@ export default function GuestFormPage() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            {t.fields.nationality} <span className="text-red-500">*</span>
+                            {t.fields.nationality}{' '}
+                            <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
                             placeholder={t.placeholders.nationality}
                             value={traveller.nationality}
-                            onChange={(e) => handleCoTravellerChange(index, 'nationality', e.target.value)}
+                            onChange={e =>
+                              handleCoTravellerChange(
+                                index,
+                                'nationality',
+                                e.target.value
+                              )
+                            }
                             required
                             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
-                              fieldErrors[`coTraveller_${index}_nationality`] 
-                                ? 'border-red-500 focus:ring-red-500' 
+                              fieldErrors[`coTraveller_${index}_nationality`]
+                                ? 'border-red-500 focus:ring-red-500'
                                 : 'border-gray-300 focus:ring-blue-500'
                             }`}
                           />
@@ -758,21 +847,21 @@ export default function GuestFormPage() {
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 {t.signature.title} <span className="text-red-500">*</span>
               </h3>
-              <div 
+              <div
                 className={`border-2 rounded-md p-4 ${!signature && error ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
-                onTouchStart={(e) => e.stopPropagation()}
-                onTouchMove={(e) => e.stopPropagation()}
-                onTouchEnd={(e) => e.stopPropagation()}
+                onTouchStart={e => e.stopPropagation()}
+                onTouchMove={e => e.stopPropagation()}
+                onTouchEnd={e => e.stopPropagation()}
               >
                 <canvas
                   ref={canvasRef}
                   width={400}
                   height={200}
                   className="border border-gray-200 w-full cursor-crosshair"
-                  style={{ 
+                  style={{
                     touchAction: 'none',
                     userSelect: 'none',
-                    WebkitUserSelect: 'none'
+                    WebkitUserSelect: 'none',
                   }}
                   onMouseDown={startDrawing}
                   onMouseMove={draw}
@@ -816,11 +905,14 @@ export default function GuestFormPage() {
                   required
                   className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <label htmlFor="privacyAccepted" className="text-sm text-gray-700">
+                <label
+                  htmlFor="privacyAccepted"
+                  className="text-sm text-gray-700"
+                >
                   <span className="text-red-500">*</span> {t.privacy.text}{' '}
-                  <a 
-                    href="https://www.hhhof.de/privacy" 
-                    target="_blank" 
+                  <a
+                    href="https://www.hhhof.de/privacy"
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 underline font-medium"
                   >
@@ -842,7 +934,7 @@ export default function GuestFormPage() {
                   </div>
                 </div>
               )}
-              
+
               <button
                 type="submit"
                 disabled={submitting}

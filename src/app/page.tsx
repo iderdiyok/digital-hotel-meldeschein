@@ -18,7 +18,7 @@ export default function Home() {
             <div className="flex justify-end mb-4">
               <LanguageSwitcher />
             </div>
-            
+
             <div className="flex items-center justify-center mb-6">
               <Image
                 src="/logo.png"
@@ -43,9 +43,11 @@ export default function Home() {
                 {t.home.title}
               </h2>
               <p className="text-gray-600 leading-relaxed text-base sm:text-lg lg:text-xl max-w-3xl mx-auto">
-                {t.home.greeting}<br />
+                {t.home.greeting}
+                <br />
                 {t.home.description}
-                <br /><br />
+                <br />
+                <br />
                 {t.home.thankYou}
               </p>
             </div>
@@ -56,17 +58,17 @@ export default function Home() {
                 href="/form/hotel-harburger-hof"
                 className="inline-flex items-center px-8 sm:px-12 py-4 sm:py-5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base sm:text-lg rounded-lg shadow-lg transform transition duration-200 hover:scale-105"
               >
-                <svg 
-                  className="w-5 h-5 sm:w-6 sm:h-6 mr-3" 
-                  fill="none" 
-                  stroke="currentColor" 
+                <svg
+                  className="w-5 h-5 sm:w-6 sm:h-6 mr-3"
+                  fill="none"
+                  stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
                 {t.home.fillOutButton}
@@ -80,9 +82,9 @@ export default function Home() {
               <p>{t.home.contact}</p>
               <p className="text-xs sm:text-sm">
                 {t.home.privacyNotice}{' '}
-                <a 
-                  href="https://www.hhhof.de/privacy" 
-                  target="_blank" 
+                <a
+                  href="https://www.hhhof.de/privacy"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:text-blue-800 underline font-medium"
                 >

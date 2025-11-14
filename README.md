@@ -5,6 +5,7 @@ Eine moderne, DSGVO-konforme Lösung für digitale Meldescheine in Hotels. Ermö
 ## 🌟 Features
 
 ### ✅ Vollständig implementiert
+
 - **Mehrsprachig** - Deutsch/Englisch mit Sprachumschalter
 - **Tablet-optimierte Benutzeroberfläche** - Touchscreen-freundlich
 - **Digitale Unterschrift** - Canvas-basierte Signatur (Pflichtfeld)
@@ -13,6 +14,7 @@ Eine moderne, DSGVO-konforme Lösung für digitale Meldescheine in Hotels. Ermö
 - **Datenschutz-Compliance** - Pflicht-Checkbox mit Link zur Datenschutzerklärung
 
 ### 🔧 Technische Features
+
 - **Next.js 14** mit TypeScript und Tailwind CSS
 - **Responsive Design** - Optimiert für Tablets und Mobilgeräte
 - **Zod Validation** - Sichere Datenvalidierung
@@ -23,6 +25,7 @@ Eine moderne, DSGVO-konforme Lösung für digitale Meldescheine in Hotels. Ermö
 ## 🚀 Schnellstart
 
 ### Installation
+
 ```bash
 # 1. Repository klonen
 git clone <repository-url>
@@ -36,6 +39,7 @@ cp .env.example .env.local
 ```
 
 ### .env.local Konfiguration
+
 ```bash
 
 # SMTP Server Details Beispiel
@@ -49,9 +53,11 @@ HOTEL_EMAIL=mail@hotel.com
 ```
 
 ### Starten
+
 ```bash
 npm run dev
 ```
+
 → Website verfügbar unter: http://localhost:3000
 
 ## � Benutzer-Workflow

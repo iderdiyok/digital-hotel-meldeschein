@@ -35,7 +35,10 @@ export async function GET() {
     return NextResponse.json({ success: true, data: hotels });
   } catch (error) {
     console.error('Error reading hotels.json:', error);
-    return NextResponse.json({ success: false, error: 'Fehler beim Laden der Hoteldaten' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: 'Fehler beim Laden der Hoteldaten' },
+      { status: 500 }
+    );
   }
 }
 
@@ -45,27 +48,45 @@ export async function PUT(request: NextRequest) {
     const validated = hotelConfigSchema.parse(body);
 
     const hotels = await readHotels();
-  const validatedAny = validated as Partial<HotelType> & { id?: string };
-  const idx = hotels.findIndex((h) => h.slug === validatedAny.slug || h.id === validatedAny.id);
+    const validatedAny = validated as Partial<HotelType> & { id?: string };
+    const idx = hotels.findIndex(
+      h => h.slug === validatedAny.slug || h.id === validatedAny.id
+    );
     if (idx === -1) {
-      return NextResponse.json({ success: false, error: 'Hotel nicht gefunden' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'Hotel nicht gefunden' },
+        { status: 404 }
+      );
     }
 
-  hotels[idx] = { ...hotels[idx], ...validated };
+    hotels[idx] = { ...hotels[idx], ...validated };
     await writeHotels(hotels);
 
-    return NextResponse.json({ success: true, message: 'Hotel-Konfiguration erfolgreich aktualisiert', data: hotels[idx] });
+    return NextResponse.json({
+      success: true,
+      message: 'Hotel-Konfiguration erfolgreich aktualisiert',
+      data: hotels[idx],
+    });
   } catch (error) {
     console.error('Error updating hotels.json:', error);
     // Zod validation errors include `issues` property
     try {
       const e: any = error;
       if (e && typeof e === 'object' && 'issues' in e) {
-        return NextResponse.json({ success: false, error: 'Ungültige Daten', details: e }, { status: 400 });
+        return NextResponse.json(
+          { success: false, error: 'Ungültige Daten', details: e },
+          { status: 400 }
+        );
       }
     } catch (err) {
       /* fallthrough to generic error */
     }
-    return NextResponse.json({ success: false, error: 'Fehler beim Aktualisieren der Hotel-Konfiguration' }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Fehler beim Aktualisieren der Hotel-Konfiguration',
+      },
+      { status: 500 }
+    );
   }
 }

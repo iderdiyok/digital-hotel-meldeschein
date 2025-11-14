@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { guestSubmissionSchema } from '@/lib/validations';
-import { sendHotelEmail } from '@/lib/email-simple';
+import { sendHotelEmail } from '@/lib/email-vercel';
 
 export async function POST(request: NextRequest) {
   try {

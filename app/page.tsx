@@ -9,11 +9,11 @@ export default function Home() {
   const { t } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
           {/* Header mit Logo */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 sm:px-8 lg:px-12 py-8 sm:py-10">
+          <div className="bg-gradient-to-r from-brand-primary to-brand-hover px-6 sm:px-8 lg:px-12 py-8 sm:py-10">
             {/* Sprachauswahl */}
             <div className="flex justify-end mb-4">
               <LanguageSwitcher />
@@ -21,17 +21,17 @@ export default function Home() {
 
             <div className="flex items-center justify-center mb-6">
               <Image
-                src="/logo.png"
-                alt="Hotel Harburger Hof Logo"
-                width={140}
-                height={140}
-                className="rounded-full bg-white p-3 w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36"
+              src="/logo.png"
+              alt="Hotel Harburger Hof Logo"
+              width={140}
+              height={140}
+              className="rounded p-1 w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36"
               />
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center">
               Hotel Harburger Hof
             </h1>
-            <p className="text-blue-100 text-center mt-3 text-base sm:text-lg">
+            <p className="text-white text-opacity-80 text-center mt-3 text-base sm:text-lg">
               Schloßmühlendamm 16, 21073 Hamburg
             </p>
           </div>
@@ -56,7 +56,7 @@ export default function Home() {
             <div className="text-center">
               <Link
                 href="/form/hotel-harburger-hof"
-                className="inline-flex items-center px-8 sm:px-12 py-4 sm:py-5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base sm:text-lg rounded-lg shadow-lg transform transition duration-200 hover:scale-105"
+                className="inline-flex items-center px-8 sm:px-12 py-4 sm:py-5 bg-brand-primary hover:bg-brand-hover text-white font-semibold text-base sm:text-lg rounded-lg shadow-lg transform transition duration-200 hover:scale-105"
               >
                 <svg
                   className="w-5 h-5 sm:w-6 sm:h-6 mr-3"
@@ -86,7 +86,7 @@ export default function Home() {
                   href="https://www.hhhof.de/privacy"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 underline font-medium"
+                  className="text-brand-primary hover:text-brand-hover underline font-medium"
                 >
                   {t.home.privacyLink}
                 </a>

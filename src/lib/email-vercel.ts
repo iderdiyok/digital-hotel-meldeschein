@@ -54,20 +54,7 @@ Hotel Harburger Hof`;
     let pdfBuffer: Buffer | null = null;
 
     try {
-      console.log('📄 Starte React-PDF Generierung (browserlos)...');
-      pdfBuffer = await generatePDF(submission);
-
-      if (pdfBuffer) {
-        console.log(
-          '✅ PDF erfolgreich generiert (' +
-            Math.round(pdfBuffer.length / 1024) +
-            ' KB)'
-        );
-      } else {
-        console.log(
-          '⚠️ PDF-Generierung fehlgeschlagen, verwende HTML-Fallback'
-        );
-      }
+      pdfBuffer = await generatePDF(submission);      
     } catch (pdfError) {
       console.error('❌ PDF-Generierung fehlgeschlagen:', pdfError);
       pdfBuffer = null;
@@ -170,14 +157,10 @@ Hotel Harburger Hof`;
           contentType: 'application/pdf',
         },
       ];
-      console.log('📎 PDF-Anhang hinzugefügt');
-    } else {
-      console.log('📧 Verwende HTML-only E-Mail (kein PDF-Anhang)');
     }
 
     // E-Mail versenden
     const result = await transporter.sendMail(mailOptions);
-    console.log('✅ E-MAIL ERFOLGREICH GESENDET:', result.messageId);
 
     return {
       success: true,

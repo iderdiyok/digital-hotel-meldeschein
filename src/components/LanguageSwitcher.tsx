@@ -7,13 +7,13 @@ export default function LanguageSwitcher() {
 
   return (
     <div className="flex items-center space-x-2">
-      <span className="text-sm text-gray-600">{t.nav.language}:</span>
+      <span className="text-sm text-gray-300">{t.nav.language}:</span>
       <div className="flex bg-gray-100 rounded-md p-1">
         <button
           onClick={() => setLanguage('de')}
           className={`px-3 py-1 text-sm rounded transition-colors ${
             language === 'de'
-              ? 'bg-white text-blue-600 shadow-sm'
+              ? 'bg-white text-brand-primary shadow-sm'
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
@@ -23,7 +23,7 @@ export default function LanguageSwitcher() {
           onClick={() => setLanguage('en')}
           className={`px-3 py-1 text-sm rounded transition-colors ${
             language === 'en'
-              ? 'bg-white text-blue-600 shadow-sm'
+              ? 'bg-white text-brand-primary shadow-sm'
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >

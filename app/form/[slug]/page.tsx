@@ -294,16 +294,10 @@ export default function GuestFormPage() {
       return;
     }
 
-    // Hole Canvas-Daten und prüfe ob es wirklich gezeichnet wurde
+    // Hole Canvas-Daten
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const hasDrawing = imageData.data.some((pixel, index) => {
-      // Prüfe Alpha-Kanal (jeder 4. Wert) - wenn > 0, dann wurde etwas gezeichnet
       return index % 4 === 3 && pixel > 0;
-    });
-
-    console.log('Signature validation:', {
-      hasDrawing,
-      signature: !!signature,
     });
 
     if (!hasDrawing || !signature) {
@@ -412,7 +406,7 @@ export default function GuestFormPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-primary mx-auto"></div>
           <p className="mt-4 text-gray-600">Laden...</p>
         </div>
       </div>
@@ -455,7 +449,7 @@ export default function GuestFormPage() {
             <div className="space-y-3">
               <button
                 onClick={() => (window.location.href = '/')}
-                className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                className="w-full px-6 py-3 bg-brand-primary text-white font-medium rounded-lg hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 transition-colors"
               >
                 {t.success.backToHome}
               </button>
@@ -516,7 +510,7 @@ export default function GuestFormPage() {
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 ${
               hasError
                 ? 'border-red-500 focus:ring-red-500'
-                : 'border-gray-300 focus:ring-blue-500'
+                : 'border-gray-300 focus:ring-brand-primary'
             }`}
           >
             <option value="">{t.fields.pleaseSelect}</option>
@@ -534,7 +528,7 @@ export default function GuestFormPage() {
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
               hasError
                 ? 'border-red-500 focus:ring-red-500'
-                : 'border-gray-300 focus:ring-blue-500'
+                : 'border-gray-300 focus:ring-brand-primary'
             }`}
           />
         ) : fieldName === 'nationality' ? (
@@ -548,7 +542,7 @@ export default function GuestFormPage() {
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
               hasError
                 ? 'border-red-500 focus:ring-red-500'
-                : 'border-gray-300 focus:ring-blue-500'
+                : 'border-gray-300 focus:ring-brand-primary'
             }`}
           />
         ) : fieldName === 'checkIn' || fieldName === 'checkOut' ? (
@@ -561,7 +555,7 @@ export default function GuestFormPage() {
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
               hasError
                 ? 'border-red-500 focus:ring-red-500'
-                : 'border-gray-300 focus:ring-blue-500'
+                : 'border-gray-300 focus:ring-brand-primary'
             }`}
           />
         ) : (
@@ -574,7 +568,7 @@ export default function GuestFormPage() {
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
               hasError
                 ? 'border-red-500 focus:ring-red-500'
-                : 'border-gray-300 focus:ring-blue-500'
+                : 'border-gray-300 focus:ring-brand-primary'
             }`}
           />
         )}
@@ -686,9 +680,9 @@ export default function GuestFormPage() {
                     type="button"
                     onClick={addCoTraveller}
                     disabled={formData.coTravellers.length >= 9}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+                    className="flex items-center space-x-2 px-4 py-2 bg-brand-primary text-white rounded-md hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-primary"
                   >
-                    <span className="text-lg">+</span>
+                    <span className="text-lg">+</span>  
                     <span>{t.guests.addCoTraveller}</span>
                   </button>
                 </div>
@@ -740,7 +734,7 @@ export default function GuestFormPage() {
                             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
                               fieldErrors[`coTraveller_${index}_firstName`]
                                 ? 'border-red-500 focus:ring-red-500'
-                                : 'border-gray-300 focus:ring-blue-500'
+                                : 'border-gray-300 focus:ring-brand-primary'
                             }`}
                           />
                           {fieldErrors[`coTraveller_${index}_firstName`] && (
@@ -769,7 +763,7 @@ export default function GuestFormPage() {
                             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
                               fieldErrors[`coTraveller_${index}_lastName`]
                                 ? 'border-red-500 focus:ring-red-500'
-                                : 'border-gray-300 focus:ring-blue-500'
+                                : 'border-gray-300 focus:ring-brand-primary'
                             }`}
                           />
                           {fieldErrors[`coTraveller_${index}_lastName`] && (
@@ -795,7 +789,7 @@ export default function GuestFormPage() {
                             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
                               fieldErrors[`coTraveller_${index}_dateOfBirth`]
                                 ? 'border-red-500 focus:ring-red-500'
-                                : 'border-gray-300 focus:ring-blue-500'
+                                : 'border-gray-300 focus:ring-brand-primary'
                             }`}
                           />
                           {fieldErrors[`coTraveller_${index}_dateOfBirth`] && (
@@ -825,7 +819,7 @@ export default function GuestFormPage() {
                             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent bg-white text-gray-900 placeholder-gray-500 ${
                               fieldErrors[`coTraveller_${index}_nationality`]
                                 ? 'border-red-500 focus:ring-red-500'
-                                : 'border-gray-300 focus:ring-blue-500'
+                                : 'border-gray-300 focus:ring-brand-primary'
                             }`}
                           />
                           {fieldErrors[`coTraveller_${index}_nationality`] && (
@@ -894,7 +888,7 @@ export default function GuestFormPage() {
             </div>
 
             {/* Datenschutz-Checkbox */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-md">
+            <div className="mt-6 p-4 bg-gray-50 rounded-md">
               <div className="flex items-start space-x-3">
                 <input
                   type="checkbox"
@@ -903,7 +897,7 @@ export default function GuestFormPage() {
                   checked={formData.privacyAccepted}
                   onChange={handleInputChange}
                   required
-                  className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="mt-1 h-4 w-4 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
                 />
                 <label
                   htmlFor="privacyAccepted"
@@ -914,7 +908,7 @@ export default function GuestFormPage() {
                     href="https://www.hhhof.de/privacy"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 underline font-medium"
+                    className="text-brand-primary hover:text-brand-hover underline font-medium"
                   >
                     {t.privacy.linkText}
                   </a>{' '}
@@ -938,8 +932,7 @@ export default function GuestFormPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full px-4 py-3 bg-blue-600 text-white text-lg font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: hotel.themeColor }}
+                className="w-full px-4 py-3 bg-brand-primary text-white text-lg font-medium rounded-md hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? t.form.submitting : t.form.submit}
               </button>
